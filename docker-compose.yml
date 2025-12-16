@@ -1,16 +1,13 @@
+version: '3.8'
 services:
-  dashboard:
+  zeus:
     build: .
-    container_name: zeus-dashboard
     ports:
-      - "3456:3000"
-    environment:
-      - PORT=3000
-      - DEMO_MODE=${DEMO_MODE:-true}
-      - ANSIBLE_HOST=${ANSIBLE_HOST:-local}
-    # Uncomment and adjust the volume mapping to share your SSH keys for Ansible
+      - "3000:3000"
     volumes:
-      - "${HOME}/.core:/root/.core"
-      #- ~/.ssh:/root/.ssh:ro
-      #- ./ansible_inventory:/etc/ansible/hosts
+      - ~/.core:/root/.core
+    environment:
+      - SERVER_PORT=3000
+      - ANSIBLE_HOST=local
+      - DEMO_MODE=true
     restart: unless-stopped

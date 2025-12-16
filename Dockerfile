@@ -1,29 +1,14 @@
-FROM node:22-alpine
-
-# Install system dependencies including Ansible and SSH
-RUN apk add --no-cache \
-    ansible \
-    openssh-client \
-    sshpass \
-    python3 \
-    py3-pip
-
+# Build stage
+FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-# Copy package files
-COPY package*.json ./
-
-# Install node dependencies
-RUN npm install --production
-
-# Copy application source
-COPY . .
-
-# Create directory for ansible inventory/config if needed
-RUN mkdir -p /etc/ansible
-
-# Expose the application port
+# Run stage
+FROM eclipse-temurin:17-jdk-alpine
+VOLUME /tmp
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
 EXPOSE 3000
-
-# Start the application
-CMD ["npm", "start"]
+ENTRYPOINT ["java","-jar","app.jar"]
