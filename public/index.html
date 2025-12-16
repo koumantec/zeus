@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoreMonitor | Container Monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="background-glow"></div>
+
+    <header>
+        <div class="logo">
+            <div class="icon-box">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M4 5V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V5C20 3.89543 19.1046 3 18 3H6C4.89543 3 4 3.89543 4 5Z"
+                        stroke="currentColor" stroke-width="2" />
+                    <path d="M8 12H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    <path d="M12 8V16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </div>
+            <h1>CoreMonitor</h1>
+        </div>
+        <div class="status-indicator">
+            <span class="dot"></span>
+            <span class="text">System Online</span>
+            <div class="settings-icon" id="settings-btn" title="Paramètres">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                        d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                    <circle cx="12" cy="12" r="3" />
+                </svg>
+            </div>
+        </div>
+    </header>
+    <div class="tab-nav">
+        <button class="tab-btn active" data-tab="config">Configuration</button>
+        <button class="tab-btn" data-tab="monitor">Monitoring</button>
+    </div>
+
+    <!-- SETUP WIZARD OVERLAY -->
+    <div id="setup-wizard" class="wizard-overlay hidden">
+        <div class="wizard-modal glass-panel">
+            <div class="form-header">
+                <h2>Initialisation</h2>
+                <p>Configuration des accès requis pour CoreMonitor.</p>
+            </div>
+            <form id="wizard-form" class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Git Login</label>
+                    <input type="text" name="gitLogin" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Git Password</label>
+                    <input type="password" name="gitPassword" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Harbor Login</label>
+                    <input type="text" name="harborLogin" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Harbor Password</label>
+                    <input type="password" name="harborPassword" class="form-input" required>
+                </div>
+
+                <div class="form-actions" style="margin-top: 2rem;">
+                    <button type="button" class="btn-secondary" id="close-wizard" style="display:none;">Fermer</button>
+                    <button type="submit" class="btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <main>
+        <div id="config" class="tab-content active">
+            <section id="configuration-form" class="glass-panel">
+                <!-- Form will be injected here by JS -->
+            </section>
+        </div>
+
+        <div id="monitor" class="tab-content">
+            <div class="dashboard-header">
+                <h2>Active Containers</h2>
+                <button id="refresh-btn" class="glass-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 4v6h-6"></path>
+                        <path d="M1 20v-6h6"></path>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 1 8.51 15"></path>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+
+            <div id="container-grid" class="grid">
+                <!-- Cards will be injected here by JS -->
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    Loading status...
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
