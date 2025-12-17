@@ -1,4 +1,4 @@
-package com.koumantec.zeus.service;
+package com.koumantec.coremonitor.service;
 
 import org.springframework.stereotype.Service;
 import java.io.*;

@@ -1,7 +1,7 @@
-package com.koumantec.zeus.controller;
+package com.koumantec.coremonitor.controller;
 
-import com.koumantec.zeus.dto.Dtos;
-import com.koumantec.zeus.service.ConfigService;
+import com.koumantec.coremonitor.dto.Dtos;
+import com.koumantec.coremonitor.service.ConfigService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

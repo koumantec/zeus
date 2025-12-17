@@ -10,10 +10,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.koumantec</groupId>
-    <artifactId>zeus</artifactId>
+    <artifactId>core-monitor</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>zeus</name>
-    <description>Zeus Monitoring Application</description>
+    <name>core-monitor</name>
+    <description>Core Monitor Application</description>
 
     <properties>
         <java.version>17</java.version>

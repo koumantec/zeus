@@ -1,13 +1,13 @@
-package com.koumantec.zeus;
+package com.koumantec.coremonitor;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class ZeusApplication {
+public class CoreMonitorApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(ZeusApplication.class, args);
+        SpringApplication.run(CoreMonitorApplication.class, args);
     }
 
 }

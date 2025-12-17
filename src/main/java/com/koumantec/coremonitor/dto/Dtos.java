@@ -1,4 +1,4 @@
-package com.koumantec.zeus.dto;
+package com.koumantec.coremonitor.dto;
 
 import lombok.Data;
 import lombok.AllArgsConstructor;
