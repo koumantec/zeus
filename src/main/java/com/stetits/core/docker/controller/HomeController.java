@@ -1,4 +1,4 @@
-package com.stetits.docker.controller;
+package com.stetits.core.docker.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;

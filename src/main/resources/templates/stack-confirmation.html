@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmation - Core Monitor</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/stack-config.css}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <circle cx="16" cy="16" r="14" stroke="#00BFB3" stroke-width="2"/>
+                    <path d="M16 8V16L22 20" stroke="#00BFB3" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="app-name">Core Monitor</span>
+            </div>
+            <div class="nav">
+                <a href="/" class="nav-item">Dashboard</a>
+                <a href="/stack-config" class="nav-item">Configuration Stack</a>
+                <span class="nav-item active">Confirmation</span>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="confirmation-header">
+                <div class="success-icon">✓</div>
+                <h1 class="title">Configuration Validée</h1>
+                <p class="subtitle">Récapitulatif de votre stack applicative</p>
+            </div>
+
+            <div class="confirmation-content">
+                <!-- Community Section -->
+                <div class="summary-section">
+                    <h2 class="summary-title">
+                        <span class="summary-icon">🌍</span>
+                        Communauté
+                    </h2>
+                    <div class="summary-card">
+                        <div class="community-badge" th:classappend="${config.community == 'fr'} ? 'badge-fr' : 'badge-be'">
+                            <span th:if="${config.community == 'fr'}">🇫🇷 France (FR)</span>
+                            <span th:if="${config.community == 'be'}">🇧🇪 Belgique (BE)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Platforms Section -->
+                <div class="summary-section">
+                    <h2 class="summary-title">
+                        <span class="summary-icon">📦</span>
+                        Plateformes Sélectionnées
+                        <span class="count-badge" th:text="${#lists.size(config.platforms)}">0</span>
+                    </h2>
+                    
+                    <div th:each="platform : ${config.platforms}" class="platform-summary">
+                        <div class="platform-header">
+                            <span class="platform-icon">📦</span>
+                            <h3 class="platform-name" th:text="${platform.name}">Platform Name</h3>
+                        </div>
+                        
+                        <!-- Components -->
+                        <div th:each="component : ${platform.components}" class="component-summary">
+                            <div class="component-header">
+                                <span class="component-icon" th:text="${component.name == 'ihm'} ? '🖥️' : '🔄'">Icon</span>
+                                <h4 class="component-name" th:text="${component.name}">Component Name</h4>
+                                <span class="app-count" th:text="${#lists.size(component.applications)} + ' application(s)'">0 applications</span>
+                            </div>
+                            
+                            <!-- Applications -->
+                            <div class="applications-grid">
+                                <div th:each="app : ${component.applications}" class="app-card">
+                                    <div class="app-header">
+                                        <span class="app-icon">📄</span>
+                                        <span class="app-name" th:text="${app.name}">App Name</span>
+                                    </div>
+                                    <div class="app-details-grid">
+                                        <div class="app-detail">
+                                            <span class="detail-label">Version</span>
+                                            <span class="detail-value version-badge" th:text="${app.version}">1.0.0</span>
+                                        </div>
+                                        <div class="app-detail">
+                                            <span class="detail-label">Archive</span>
+                                            <span class="detail-value archive-path" th:text="${app.archiveFile}">path</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📦</div>
+                        <div class="stat-value" th:text="${#lists.size(config.platforms)}">0</div>
+                        <div class="stat-label">Plateformes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🔧</div>
+                        <div class="stat-value" th:text="${#aggregates.sum(config.platforms.![#lists.size(components)])}">0</div>
+                        <div class="stat-label">Composants</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📄</div>
+                        <div class="stat-value" th:text="${#aggregates.sum(config.platforms.![#aggregates.sum(components.![#lists.size(applications)])])}">0</div>
+                        <div class="stat-label">Applications</div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="confirmation-actions">
+                    <a href="/stack-config" class="btn-secondary">
+                        <span class="btn-icon">←</span>
+                        Modifier la configuration
+                    </a>
+                    <button class="btn-primary" onclick="deployStack()">
+                        <span class="btn-icon">🚀</span>
+                        Déployer la stack
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <span>Core Monitor - Configuration de Stack</span>
+        </div>
+    </div>
+
+    <script>
+        function deployStack() {
+            alert('Fonctionnalité de déploiement à implémenter');
+            // Ici vous pouvez ajouter la logique de déploiement
+        }
+    </script>
+</body>
+</html>

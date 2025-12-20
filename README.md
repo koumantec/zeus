@@ -12,10 +12,16 @@ A Spring Boot application with Thymeleaf template engine, featuring a dark Kiban
 
 ## Features
 
-- Dark theme UI inspired by Kibana
-- Responsive design
-- Fully containerized build and deployment
-- Health check monitoring
+- **Dark theme UI** inspired by Kibana
+- **Responsive design**
+- **Fully containerized** build and deployment
+- **Health check** monitoring
+- **Stack Configuration System**: Intelligent form system for selecting application stack components
+  - 4-level hierarchy: Community → Platform → Component → Application
+  - Expandable tree view with checkboxes
+  - Single selection for community (FR/BE)
+  - Multiple selection for platforms, components, and applications
+  - Confirmation page with detailed summary
 
 ## Prerequisites
 
@@ -24,17 +30,34 @@ A Spring Boot application with Thymeleaf template engine, featuring a dark Kiban
 
 ## Quick Start
 
-### Build and Run with Docker Compose
+### Option 1: Using the rebuild script (Recommended)
+
+```bash
+./rebuild.sh
+```
+
+### Option 2: Using Docker Compose
 
 ```bash
 docker-compose up --build
 ```
 
-The application will be available at: **http://localhost:3000**
+### Option 3: Manual Docker commands
+
+```bash
+docker build -t core-monitor .
+docker run -d -p 3000:3000 --name core-monitor-app core-monitor
+```
+
+The application will be available at:
+- **Dashboard**: http://localhost:3000
+- **Stack Configuration**: http://localhost:3000/stack-config
 
 ### Stop the Application
 
 ```bash
+docker stop core-monitor-app
+# or with docker-compose
 docker-compose down
 ```
 
