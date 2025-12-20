@@ -1,4 +1,4 @@
-package com.koumantec.coremonitor;
+package com.stetits.docker;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -9,5 +9,4 @@ public class CoreMonitorApplication {
     public static void main(String[] args) {
         SpringApplication.run(CoreMonitorApplication.class, args);
     }
-
 }

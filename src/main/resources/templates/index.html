@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core Monitor</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <circle cx="16" cy="16" r="14" stroke="#00BFB3" stroke-width="2"/>
+                    <path d="M16 8V16L22 20" stroke="#00BFB3" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="app-name">Core Monitor</span>
+            </div>
+            <div class="nav">
+                <span class="nav-item active">Dashboard</span>
+                <span class="nav-item">Analytics</span>
+                <span class="nav-item">Settings</span>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="welcome-card">
+                <h1 class="title">Hello World</h1>
+                <p class="subtitle">Welcome to Core Monitor - Your application is running successfully</p>
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">System Online</span>
+                </div>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-label">Server Port</div>
+                    <div class="info-value">3000</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Framework</div>
+                    <div class="info-value">Spring Boot</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Template Engine</div>
+                    <div class="info-value">Thymeleaf</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Java Version</div>
+                    <div class="info-value">21</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <span>Powered by Spring Boot & Thymeleaf</span>
+        </div>
+    </div>
+</body>
+</html>
