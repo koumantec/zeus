@@ -271,6 +271,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 ]
             },
             {
+                nom: "applications_ihm_core",
+                type: "select",
+                label: "Applications IHM",
+                obligatoire: true,
+                condition: [
+                    { champ: "composants_core", valeur: "IHM", action: "afficher" }
+                ],
+                options: [
+                    { label: "INF", valeur: "INF" },
+                    { label: "PLBINF", valeur: "PLBINF" },
+                    { label: "Toutes les IHM", valeur: "ALL_IHM" }
+                ]
+            },
+            {
                 nom: "composants_both",
                 type: "select",
                 label: "Composants (ACore + Core)",
@@ -322,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <label class="form-label" for="${field.nom}">
                         ${field.label} ${field.obligatoire ? '<span style="color:var(--accent-color)">*</span>' : ''}
                     </label>
-                    <select class="form-select" id="${field.nom}" name="${field.nom}" ${field.obligatoire ? 'required' : ''}>
+                    <select class="form-select" id="${field.nom}" name="${field.nom}">
                         <option value="">Sélectionner...</option>
                         ${field.options.map(opt => `<option value="${opt.valeur}">${opt.label}</option>`).join('')}
                     </select>
@@ -390,14 +404,49 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.disabled = true;
 
             try {
+                // Map legacy UI fields to StackCompositionRequest structure
+                const toLower = (s) => (typeof s === 'string' ? s.toLowerCase() : s);
+
+                const community = toLower(cleanData.community);
+
+                const platforms = (() => {
+                    switch (cleanData.plateforme) {
+                        case 'Core': return ['core'];
+                        case 'ACore': return ['acore'];
+                        case 'ACore_et_Core': return ['core', 'acore'];
+                        default: return [];
+                    }
+                })();
+
+                const compSel = cleanData.composants_acore || cleanData.composants_core || cleanData.composants_both || cleanData.composants_be || '';
+                let components = [];
+                if (compSel === 'IHM') components = ['ihm'];
+                else if (compSel === 'FLUX') components = ['flux'];
+                else if (compSel.includes('Complet') || compSel === 'Stack_Complete') components = ['ihm', 'flux'];
+
+                const webapps = (() => {
+                    const v = cleanData.applications_ihm_core;
+                    if (!v) return [];
+                    if (v === 'INF') return ['inf'];
+                    if (v === 'PLBINF') return ['plbinf'];
+                    if (v === 'ALL_IHM') return ['inf', 'plbinf'];
+                    return [];
+                })();
+
+                const payload = { community, platforms, components, webapps };
+
                 const res = await fetch(submitBtn.url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(cleanData)
+                    body: JSON.stringify(payload)
                 });
 
                 if (res.ok) {
-                    alert('Configuration soumise avec succès !');
+                    const data = await res.json();
+                    // Persist for confirmation page
+                    sessionStorage.setItem('stackSubmission', JSON.stringify(data));
+                    // Redirect to confirmation page
+                    window.location.href = 'confirmation.html';
                 } else {
                     alert('Erreur lors de la soumission.');
                 }
@@ -611,19 +660,27 @@ document.addEventListener('DOMContentLoaded', () => {
             el.style.opacity = '0';
             setTimeout(() => el.style.opacity = '1', 10);
             const input = el.querySelector('select');
-            if (input) input.disabled = false;
+            if (input) {
+                input.disabled = false;
+                // Restore required attribute if field was originally required
+                const fieldConfig = formConfig.champs.find(f => f.nom === input.name);
+                if (fieldConfig && fieldConfig.obligatoire) {
+                    input.setAttribute('required', '');
+                }
+            }
         }
     }
 
     function hideField(el) {
         el.style.display = 'none';
         const input = el.querySelector('select');
-        // Disable hidden inputs so they aren't part of FormData/validation checks if we wanted strictness
-        // ex: required fields shouldn't block submit if hidden
-        // But for formData retrieval we used above, we need to be careful.
-        // Let's just reset value when hiding?
-        if (input && input.value !== "") {
-            input.value = "";
+        if (input) {
+            // Remove required attribute to prevent validation errors on hidden fields
+            input.removeAttribute('required');
+            // Reset value when hiding
+            if (input.value !== "") {
+                input.value = "";
+            }
         }
     }
 

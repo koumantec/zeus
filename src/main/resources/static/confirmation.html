@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Confirmation | CoreMonitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .summary-row { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1rem; }
+        .summary-label { color: var(--text-secondary); font-size: .9rem; text-transform: uppercase; letter-spacing: .05em; }
+        .badge { display: inline-block; padding: .35rem .7rem; border: 1px solid var(--card-border); border-radius: 999px; background: rgba(255,255,255,0.05); color: var(--text-primary); font-size: .9rem; margin: .25rem .25rem 0 0; }
+        .badge-wrap { display: flex; flex-wrap: wrap; }
+        .page-actions { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; }
+        .json-block { background: rgba(0,0,0,0.35); border: 1px solid var(--card-border); border-radius: 8px; padding: 1rem; overflow-x: auto; }
+        code { color: rgba(255,255,255,0.9); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: .9rem; }
+    </style>
+</head>
+<body>
+    <div class="background-glow"></div>
+    <header>
+        <div class="logo">
+            <div class="icon-box">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 5V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V5C20 3.89543 19.1046 3 18 3H6C4.89543 3 4 3.89543 4 5Z" stroke="currentColor" stroke-width="2" />
+                    <path d="M8 12H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    <path d="M12 8V16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </div>
+            <h1>Confirmation</h1>
+        </div>
+    </header>
+
+    <main>
+        <section class="glass-panel">
+            <div class="form-header">
+                <h2>Votre configuration a été enregistrée</h2>
+                <p>Récapitulatif des informations de StackCompositionRequest.</p>
+            </div>
+
+            <div id="summary" class="summary"></div>
+
+            <div class="page-actions">
+                <a href="index.html" class="btn-secondary">Retour</a>
+            </div>
+        </section>
+
+        <section class="glass-panel">
+            <div class="form-header">
+                <h2>Données brutes</h2>
+                <p>Contenu JSON renvoyé par le serveur.</p>
+            </div>
+            <div class="json-block"><code id="raw-json">{}</code></div>
+        </section>
+    </main>
+
+    <script>
+        function toBadges(list) {
+            if (!Array.isArray(list) || list.length === 0) return '<span class="badge">Aucun</span>';
+            return '<div class="badge-wrap">' + list.map(v => `<span class="badge">${v}</span>`).join('') + '</div>';
+        }
+
+        function renderSummary(data) {
+            const s = document.getElementById('summary');
+            if (!data) {
+                s.innerHTML = '<div class="loading-state">Aucune donnée trouvée. Revenez à l\'accueil et soumettez le formulaire.</div>';
+                return;
+            }
+            const community = data.community || '—';
+            const platforms = data.platforms || [];
+            const components = data.components || [];
+            const webapps = data.webapps || [];
+
+            s.innerHTML = `
+                <div class="summary-row">
+                    <div class="summary-label">Communauté</div>
+                    <div><span class="badge">${community}</span></div>
+                </div>
+                <div class="summary-row">
+                    <div class="summary-label">Plateformes</div>
+                    ${toBadges(platforms)}
+                </div>
+                <div class="summary-row">
+                    <div class="summary-label">Composants</div>
+                    ${toBadges(components)}
+                </div>
+                <div class="summary-row">
+                    <div class="summary-label">Applications Web (IHM)</div>
+                    ${toBadges(webapps)}
+                </div>
+            `;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                const raw = sessionStorage.getItem('stackSubmission');
+                const data = raw ? JSON.parse(raw) : null;
+                renderSummary(data);
+                document.getElementById('raw-json').textContent = JSON.stringify(data || {}, null, 2);
+            } catch (e) {
+                console.error(e);
+                renderSummary(null);
+            }
+        });
+    </script>
+</body>
+</html>

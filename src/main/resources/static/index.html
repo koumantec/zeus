@@ -40,8 +40,9 @@
         </div>
     </header>
     <div class="tab-nav">
-        <button class="tab-btn active" data-tab="config">Configuration</button>
+        <button class="tab-btn active" data-tab="config">Composition de la stack</button>
         <button class="tab-btn" data-tab="monitor">Monitoring</button>
+        <button class="tab-btn" data-tab="infos">Infos utiles</button>
     </div>
 
     <!-- SETUP WIZARD OVERLAY -->
@@ -104,6 +105,21 @@
                     Loading status...
                 </div>
             </div>
+        </div>
+        
+        <div id="infos" class="tab-content">
+            <section class="glass-panel">
+                <div class="form-header">
+                    <h2>Infos utiles</h2>
+                    <p>Liens de connexion vers des services.</p>
+                </div>
+                <ul class="info-links">
+                    <li><a href="http://localhost:8085/console" target="_blank" rel="noopener">Console GLU</a></li>
+                    <li><a href="https://localhost:9443/webapp-plf" target="_blank" rel="noopener">IHM PLF</a></li>
+                    <li><a href="https://localhost:9443/webapp-plbinf" target="_blank" rel="noopener">IHM PLBINF</a></li>
+                    <li><a href="https://localhost:9443/pilad" target="_blank" rel="noopener">IHM PILAD</a></li>
+                </ul>
+            </section>
         </div>
     </main>
 

@@ -21,20 +21,20 @@ public class AnsibleService {
 
     public List<String> executeCommand(String command) {
         List<String> output = new ArrayList<>();
-        try {
-            ProcessBuilder processBuilder = new ProcessBuilder();
-            processBuilder.command("bash", "-c", command);
-            Process process = processBuilder.start();
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.add(line);
-            }
-            process.waitFor();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//        try {
+//            ProcessBuilder processBuilder = new ProcessBuilder();
+//            processBuilder.command("bash", "-c", command);
+//            Process process = processBuilder.start();
+//
+//            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+//            String line;
+//            while ((line = reader.readLine()) != null) {
+//                output.add(line);
+//            }
+//            process.waitFor();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
         return output;
     }
 
