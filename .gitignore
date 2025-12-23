@@ -1,2 +1,6 @@
 .idea/*
 target
+
+# Settings files (contains sensitive information)
+.core/
+settings.conf

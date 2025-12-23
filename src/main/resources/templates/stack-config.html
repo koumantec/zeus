@@ -9,19 +9,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div class="logo">
-                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                    <circle cx="16" cy="16" r="14" stroke="#00BFB3" stroke-width="2"/>
-                    <path d="M16 8V16L22 20" stroke="#00BFB3" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                <span class="app-name">Core Monitor</span>
-            </div>
-            <div class="nav">
-                <a href="/" class="nav-item">Dashboard</a>
-                <span class="nav-item active">Configuration Stack</span>
-            </div>
-        </div>
+        <div th:replace="~{fragments/header :: header(currentPage='stack-config')}"></div>
         
         <div class="main-content">
             <div class="config-header">
@@ -365,9 +353,7 @@
             </form>
         </div>
         
-        <div class="footer">
-            <span>Core Monitor - Configuration de Stack</span>
-        </div>
+        <div th:replace="~{fragments/footer :: footer(footerText='Core Monitor - Configuration de Stack')}"></div>
     </div>
 
     <script th:src="@{/js/stack-config.js}"></script>

@@ -8,6 +8,8 @@ services:
     container_name: core-monitor
     ports:
       - "3000:3000"
+    volumes:
+      - ${HOME}/.core:/root/.core
     environment:
       - SPRING_PROFILES_ACTIVE=prod
     restart: unless-stopped

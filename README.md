@@ -22,6 +22,11 @@ A Spring Boot application with Thymeleaf template engine, featuring a dark Kiban
   - Single selection for community (FR/BE)
   - Multiple selection for platforms, components, and applications
   - Confirmation page with detailed summary
+- **Settings Management**: Secure storage and management of GitHub STET credentials
+  - Automatic redirection to settings page if not configured
+  - Persistent storage in `~/.core/settings.conf`
+  - Easy editing via Settings tab in the dashboard
+  - Docker volume mounting for data persistence
 
 ## Prerequisites
 
@@ -52,6 +57,9 @@ docker run -d -p 3000:3000 --name core-monitor-app core-monitor
 The application will be available at:
 - **Dashboard**: http://localhost:3000
 - **Stack Configuration**: http://localhost:3000/stack-config
+- **Settings**: http://localhost:3000/settings
+
+> **Note**: On first launch, you will be automatically redirected to the Settings page to configure your GitHub STET credentials.
 
 ### Stop the Application
 
@@ -117,6 +125,27 @@ core-monitor/
 ## Configuration
 
 The application runs on port **3000** by default. You can modify this in `src/main/resources/application.properties`.
+
+### Settings Configuration
+
+The application stores GitHub STET credentials in `~/.core/settings.conf`. This file is automatically created on first configuration and persists between container restarts thanks to Docker volume mounting.
+
+For more information about the settings feature, see:
+- **[START_HERE.md](START_HERE.md)** - Quick start guide
+- **[SUMMARY.md](SUMMARY.md)** - Feature overview
+- **[DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)** - Complete documentation index
+
+## Documentation
+
+Comprehensive documentation is available:
+
+| Document | Description |
+|----------|-------------|
+| [START_HERE.md](START_HERE.md) | 🚀 Quick start guide - **Read this first!** |
+| [SUMMARY.md](SUMMARY.md) | 📋 Feature overview and quick reference |
+| [QUICK_START.md](QUICK_START.md) | ⚡ Detailed startup instructions |
+| [README_SETTINGS.md](README_SETTINGS.md) | 🎯 Settings feature guide |
+| [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) | 🗺️ Complete documentation index |
 
 ## License
 
