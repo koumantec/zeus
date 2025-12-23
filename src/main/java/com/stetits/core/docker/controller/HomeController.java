@@ -17,12 +17,27 @@ public class HomeController {
     @Autowired
     private StackConfigService stackConfigService;
 
+    @Autowired
+    private com.stetits.core.docker.service.MockDockerService mockDockerService;
+
+    // @Autowired
+    // private com.stetits.core.docker.service.DockerService dockerService;
+
     @GetMapping("/")
     public String home(Model model) {
         if (!settingsService.isSettingsConfigured()) {
             return "redirect:/settings";
         }
-        
+
+        // Load Mock Docker containers for prototype
+        try {
+            model.addAttribute("containers", mockDockerService.listContainers());
+            model.addAttribute("dockerAvailable", true);
+        } catch (Exception e) {
+            model.addAttribute("dockerAvailable", false);
+            model.addAttribute("dockerError", e.getMessage());
+        }
+
         // Load stack configuration if available
         StackConfiguration stackConfig = stackConfigService.loadStackConfiguration();
         if (stackConfig != null) {
@@ -31,7 +46,7 @@ public class HomeController {
         } else {
             model.addAttribute("hasStackConfig", false);
         }
-        
+
         return "index";
     }
 }

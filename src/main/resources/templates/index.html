@@ -1,133 +1,106 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Core Monitor</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <link rel="stylesheet" th:href="@{/css/stack-config.css}">
+    <!-- Use the new Neutral Dark Theme CSS -->
+    <link rel="stylesheet" th:href="@{/css/dark-theme.css}">
+
+    <!-- Google Fonts: Inter + Roboto Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
 </head>
+
 <body>
-    <div class="container">
-        <div th:replace="~{fragments/header :: header(currentPage='dashboard')}"></div>
-        
-        <div class="main-content">
-            <div class="welcome-card">
-                <h1 class="title">Dashboard Core Monitor</h1>
-                <p class="subtitle">Vue d'ensemble de votre stack applicative</p>
-                <div class="status-indicator">
-                    <span class="status-dot"></span>
-                    <span class="status-text">System Online</span>
-                </div>
+    <div class="layout-container">
+        <!-- Header Fragment: Passing Check for Active Tab -->
+        <header class="main-header">
+            <div class="brand-logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                Core Monitor
             </div>
-            
-            <!-- Stack Configuration Display -->
-            <div th:if="${hasStackConfig}">
-                <div class="confirmation-content">
-                    <!-- Community Section -->
-                    <div class="summary-section">
-                        <h2 class="summary-title">
-                            <span class="summary-icon">🌍</span>
-                            Communauté
-                        </h2>
-                        <div class="summary-card">
-                            <div class="community-badge" th:classappend="${config.community == 'fr'} ? 'badge-fr' : 'badge-be'">
-                                <span th:if="${config.community == 'fr'}">🇫🇷 France (FR)</span>
-                                <span th:if="${config.community == 'be'}">🇧🇪 Belgique (BE)</span>
-                            </div>
+            <nav class="nav-links">
+                <a href="/" class="nav-link"
+                    th:classappend="${currentPage == 'dashboard' or currentPage == null} ? 'active' : ''">Dashboard</a>
+                <a href="/stack-config" class="nav-link"
+                    th:classappend="${currentPage == 'stack-config'} ? 'active' : ''">Stack</a>
+                <a href="/settings" class="nav-link"
+                    th:classappend="${currentPage == 'settings'} ? 'active' : ''">Settings</a>
+            </nav>
+        </header>
+
+        <main>
+            <h1 class="page-title">Container Matrix</h1>
+
+            <!-- Prototype Dashboard Grid -->
+            <div th:if="${dockerAvailable}" class="grid-container">
+                <div th:each="container : ${containers}" class="card">
+                    <div class="card-header">
+                        <h3 class="card-title" th:text="${container.name}" th:title="${container.name}">nginx-proxy</h3>
+                        <span class="status-indicator"
+                            th:classappend="${container.state == 'running'} ? 'status-running' : 'status-exited'"
+                            th:text="${container.state}">RUNNING</span>
+                    </div>
+
+                    <div class="card-metrics">
+                        <div class="metric-row">
+                            <span class="metric-label">Image</span>
+                            <span class="metric-value" th:text="${#strings.abbreviate(container.image, 25)}"
+                                th:title="${container.image}">nginx:latest</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Uptime</span>
+                            <span class="metric-value" th:text="${container.status}">Up 2 weeks</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">ID</span>
+                            <span class="metric-value" th:text="${#strings.substring(container.id,0,8)}">a1b2c3d4</span>
                         </div>
                     </div>
 
-                    <!-- Platforms Section -->
-                    <div class="summary-section">
-                        <h2 class="summary-title">
-                            <span class="summary-icon">📦</span>
-                            Plateformes Configurées
-                            <span class="count-badge" th:text="${#lists.size(config.platforms)}">0</span>
-                        </h2>
-                        
-                        <div th:each="platform : ${config.platforms}" class="platform-summary">
-                            <div class="platform-header">
-                                <span class="platform-icon">📦</span>
-                                <h3 class="platform-name" th:text="${platform.name}">Platform Name</h3>
-                            </div>
-                            
-                            <!-- Components -->
-                            <div th:each="component : ${platform.components}" class="component-summary">
-                                <div class="component-header">
-                                    <span class="component-icon" th:text="${component.name == 'ihm'} ? '🖥️' : '🔄'">Icon</span>
-                                    <h4 class="component-name" th:text="${component.name}">Component Name</h4>
-                                    <span class="app-count" th:text="${#lists.size(component.applications)} + ' application(s)'">0 applications</span>
-                                </div>
-                                
-                                <!-- Applications -->
-                                <div class="applications-grid">
-                                    <div th:each="app : ${component.applications}" class="app-card">
-                                        <div class="app-header">
-                                            <span class="app-icon">📄</span>
-                                            <span class="app-name" th:text="${app.name}">App Name</span>
-                                        </div>
-                                        <div class="app-details-grid">
-                                            <div class="app-detail">
-                                                <span class="detail-label">Version</span>
-                                                <span class="detail-value version-badge" th:text="${app.version}">1.0.0</span>
-                                            </div>
-                                            <div class="app-detail">
-                                                <span class="detail-label">Archive</span>
-                                                <span class="detail-value archive-path" th:text="${app.archiveFile}">path</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Metadata Popover (Hover Reveal) -->
+                    <div class="card-popover">
+                        <div class="popover-header">Port Mappings</div>
+                        <ul class="popover-list" th:if="${not #lists.isEmpty(container.ports)}">
+                            <li class="popover-item" th:each="port : ${container.ports}" th:text="${port}">80:80</li>
+                        </ul>
+                        <div th:if="${#lists.isEmpty(container.ports)}" class="empty-state">No ports exposed</div>
 
-                    <!-- Summary Stats -->
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-icon">📦</div>
-                            <div class="stat-value" th:text="${#lists.size(config.platforms)}">0</div>
-                            <div class="stat-label">Plateformes</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">🔧</div>
-                            <div class="stat-value" th:text="${#aggregates.sum(config.platforms.![#lists.size(components)])}">0</div>
-                            <div class="stat-label">Composants</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">📄</div>
-                            <div class="stat-value" th:text="${#aggregates.sum(config.platforms.![#aggregates.sum(components.![#lists.size(applications)])])}">0</div>
-                            <div class="stat-label">Applications</div>
-                        </div>
-                    </div>
-
-                    <!-- Actions -->
-                    <div class="confirmation-actions">
-                        <a href="/stack-config" class="btn-secondary">
-                            <span class="btn-icon">✏️</span>
-                            Modifier la configuration
-                        </a>
+                        <div class="popover-header" style="margin-top: 1rem;">Volume Mounts</div>
+                        <ul class="popover-list" th:if="${not #lists.isEmpty(container.volumes)}">
+                            <li class="popover-item" th:each="vol : ${container.volumes}" th:text="${vol}">/data ->
+                                /var/lib</li>
+                        </ul>
+                        <div th:if="${#lists.isEmpty(container.volumes)}" class="empty-state">No volumes mounted</div>
                     </div>
                 </div>
             </div>
-            
-            <!-- No Stack Configuration -->
-            <div th:unless="${hasStackConfig}">
-                <div class="welcome-card" style="margin-top: 2rem;">
-                    <h2 class="title" style="font-size: 1.5rem;">Aucune stack configurée</h2>
-                    <p class="subtitle">Configurez votre stack applicative pour commencer</p>
-                    <div style="margin-top: 2rem;">
-                        <a href="/stack-config" class="btn-primary" style="display: inline-block; padding: 12px 24px; background: #00BFB3; color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">
-                            <span class="btn-icon">⚙️</span>
-                            Configurer la stack
-                        </a>
-                    </div>
+
+            <!-- Error State -->
+            <div th:unless="${dockerAvailable}"
+                style="text-align: center; color: var(--text-secondary); padding: 4rem;">
+                <h2 style="color: var(--status-danger);">Overview Unavailable</h2>
+                <p>Unable to retrieve container data at this time.</p>
+                <div style="margin-top:1rem; font-family: monospace; font-size: 0.85rem;" th:text="${dockerError}">
                 </div>
             </div>
-        </div>
-        
-        <div th:replace="~{fragments/footer :: footer}"></div>
+
+        </main>
+
+        <footer class="main-footer">
+            <p>&copy; 2024 Core Monitor &middot; Operations Dashboard</p>
+        </footer>
     </div>
 </body>
+
 </html>
