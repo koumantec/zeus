@@ -119,6 +119,50 @@ document.getElementById('stackForm').addEventListener('submit', function(e) {
     }
 });
 
+// Load existing selections
+function loadExistingSelections(community, selections) {
+    if (!community || !selections || selections.length === 0) {
+        return;
+    }
+    
+    // Set community radio button
+    const communityRadio = document.querySelector(`input[name="community"][value="${community}"]`);
+    if (communityRadio) {
+        communityRadio.checked = true;
+        switchCommunity(community);
+    }
+    
+    // Check the corresponding checkboxes
+    selections.forEach(selection => {
+        const checkbox = document.querySelector(`input[name="selections"][value="${selection}"]`);
+        if (checkbox) {
+            checkbox.checked = true;
+            
+            // Expand parent nodes and update their state
+            let currentElement = checkbox.closest('.tree-node');
+            while (currentElement) {
+                const nodeChildren = currentElement.querySelector('.node-children');
+                if (nodeChildren) {
+                    nodeChildren.classList.add('expanded');
+                    const expandIcon = currentElement.querySelector('.expand-icon');
+                    if (expandIcon) {
+                        expandIcon.classList.add('expanded');
+                    }
+                }
+                
+                // Update parent checkbox
+                const parentCheckbox = currentElement.querySelector(':scope > .node-header > .node-checkbox');
+                if (parentCheckbox && parentCheckbox.dataset.parent) {
+                    updateParentCheckbox(parentCheckbox);
+                }
+                
+                // Move to parent tree node
+                currentElement = currentElement.parentElement.closest('.tree-node');
+            }
+        }
+    });
+}
+
 // Add change listeners to all application checkboxes to update parents
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.application-checkbox').forEach(checkbox => {
@@ -132,4 +176,19 @@ document.addEventListener('DOMContentLoaded', function() {
             updateParentCheckbox(this);
         });
     });
+    
+    // Load existing selections if available
+    const existingCommunity = document.body.dataset.existingCommunity;
+    const existingSelectionsStr = document.body.dataset.existingSelections;
+    if (existingCommunity && existingSelectionsStr && existingSelectionsStr.trim() !== '') {
+        try {
+            // Split by comma to get array of selections
+            const existingSelections = existingSelectionsStr.split(',').map(s => s.trim()).filter(s => s !== '');
+            if (existingSelections.length > 0) {
+                loadExistingSelections(existingCommunity, existingSelections);
+            }
+        } catch (e) {
+            console.error('Error loading existing selections:', e);
+        }
+    }
 });

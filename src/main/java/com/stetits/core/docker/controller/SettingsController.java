@@ -31,7 +31,7 @@ public class SettingsController {
         try {
             settingsService.saveSettings(githubUsername, githubPassword);
             redirectAttributes.addFlashAttribute("success", "Paramètres enregistrés avec succès");
-            return "redirect:/settings";
+            return "redirect:/";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Erreur lors de l'enregistrement des paramètres");
             return "redirect:/settings";

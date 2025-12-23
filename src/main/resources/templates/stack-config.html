@@ -7,7 +7,7 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/stack-config.css}">
 </head>
-<body>
+<body th:attr="data-existing-community=${existingCommunity}, data-existing-selections=${existingSelections != null ? #strings.arrayJoin(existingSelections.toArray(), ',') : ''}">
     <div class="container">
         <div th:replace="~{fragments/header :: header(currentPage='stack-config')}"></div>
         
@@ -17,7 +17,7 @@
                 <p class="subtitle">Sélectionnez les composants de votre stack applicative core-xchg</p>
             </div>
 
-            <form id="stackForm" action="/stack-config/confirm" method="post">
+            <form id="stackForm" action="/stack-config/validate" method="post">
                 <!-- Niveau 1: Communauté (Radio buttons) -->
                 <div class="config-section">
                     <h2 class="section-title">
