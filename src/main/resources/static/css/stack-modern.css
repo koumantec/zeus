@@ -1,0 +1,386 @@
+/* Modern Stack Configuration Styles */
+
+/* Stack Config Header with Counter */
+.stack-config-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 3rem;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.selection-counter {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, rgba(56, 189, 248, 0.05) 100%);
+    border: 1px solid var(--border-accent);
+    border-radius: var(--radius-md);
+    padding: 1.5rem 2rem;
+    min-width: 200px;
+}
+
+.counter-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.counter-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--accent-primary);
+    line-height: 1;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.counter-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+/* Enhanced Config Section */
+.config-section {
+    margin-bottom: 3rem;
+}
+
+.section-title {
+    font-size: 0.875rem !important;
+    color: var(--text-secondary) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 1.5rem !important;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 600;
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+}
+
+.level-badge {
+    background: linear-gradient(135deg, var(--accent-primary) 0%, rgba(56, 189, 248, 0.7) 100%) !important;
+    color: var(--bg-page) !important;
+    padding: 0.25rem 0.75rem !important;
+    border-radius: 999px !important;
+    font-size: 0.7rem !important;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+/* Community Dropdown - Elegant Design */
+.community-dropdown-container {
+    position: relative;
+    max-width: 400px;
+}
+
+.community-dropdown {
+    width: 100%;
+    padding: 1rem 3rem 1rem 1.5rem;
+    background-color: var(--bg-surface);
+    border: 2px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    appearance: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+}
+
+.community-dropdown:hover {
+    border-color: var(--text-muted);
+    background-color: var(--bg-surface-hover);
+}
+
+.community-dropdown:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15);
+    background-color: var(--bg-surface);
+}
+
+.community-dropdown option {
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+    padding: 1rem;
+}
+
+.community-dropdown option:disabled {
+    color: var(--text-muted);
+}
+
+.dropdown-icon {
+    position: absolute;
+    right: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+}
+
+.community-dropdown:focus ~ .dropdown-icon {
+    color: var(--accent-primary);
+    transform: translateY(-50%) rotate(180deg);
+}
+
+/* Tree Container Animation */
+.tree-container {
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Tree Nodes - Modern Cards */
+.tree-node {
+    margin-bottom: 1rem !important;
+}
+
+.platform-node {
+    margin-bottom: 2rem !important;
+}
+
+.node-header {
+    background-color: var(--bg-surface) !important;
+    border: 1px solid var(--border-subtle) !important;
+    padding: 1.25rem 1.5rem !important;
+    border-radius: var(--radius-md) !important;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    user-select: none;
+}
+
+.platform-node > .node-header {
+    background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(30, 41, 59, 0.5) 100%) !important;
+    border: 2px solid var(--border-subtle) !important;
+    padding: 1.5rem !important;
+}
+
+.platform-node > .node-header:hover {
+    border-color: var(--accent-primary) !important;
+    box-shadow: 0 4px 12px -2px rgba(56, 189, 248, 0.15);
+    transform: translateX(4px);
+}
+
+.component-node > .node-header {
+    background-color: rgba(30, 41, 59, 0.3) !important;
+    margin-left: 2rem;
+}
+
+.component-node > .node-header:hover {
+    background-color: var(--bg-surface-hover) !important;
+    border-color: var(--text-muted) !important;
+    transform: translateX(4px);
+}
+
+.node-header:hover {
+    background-color: var(--bg-surface-hover) !important;
+    border-color: var(--text-muted) !important;
+}
+
+/* Node Children Animation */
+.node-children {
+    margin-left: 2rem !important;
+    margin-top: 1rem !important;
+    padding-left: 1.5rem !important;
+    border-left: 2px solid var(--border-subtle) !important;
+    display: none;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 2000px;
+    }
+}
+
+.node-children.open {
+    display: block !important;
+}
+
+/* Modern Checkboxes */
+.node-checkbox {
+    appearance: none !important;
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+    border: 2px solid var(--text-muted) !important;
+    border-radius: 6px !important;
+    background-color: transparent !important;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.node-checkbox:hover {
+    border-color: var(--accent-primary) !important;
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1);
+}
+
+.node-checkbox:checked {
+    background: linear-gradient(135deg, var(--accent-primary) 0%, rgba(56, 189, 248, 0.8) 100%) !important;
+    border-color: var(--accent-primary) !important;
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15);
+}
+
+.node-checkbox:checked::after {
+    content: '✓' !important;
+    position: absolute;
+    color: var(--bg-page) !important;
+    font-size: 0.875rem !important;
+    font-weight: bold;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%);
+}
+
+/* Enhanced Labels */
+.node-label {
+    display: flex;
+    align-items: center;
+    gap: 1rem !important;
+    flex-grow: 1;
+    cursor: pointer;
+}
+
+.node-icon {
+    font-size: 1.5rem !important;
+    transition: transform 0.2s ease;
+}
+
+.node-header:hover .node-icon {
+    transform: scale(1.1);
+}
+
+.node-text {
+    font-weight: 600 !important;
+    color: var(--text-primary) !important;
+    font-size: 1rem !important;
+}
+
+.platform-node .node-text {
+    font-size: 1.125rem !important;
+}
+
+.node-badge {
+    font-size: 0.7rem !important;
+    padding: 0.25rem 0.75rem !important;
+    border-radius: 999px !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: var(--text-muted) !important;
+    margin-left: auto !important;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.app-badge {
+    background-color: rgba(56, 189, 248, 0.15) !important;
+    color: var(--accent-primary) !important;
+}
+
+/* Application Nodes - Refined */
+.application-node .node-header {
+    background-color: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid var(--border-subtle) !important;
+    border-radius: 0 !important;
+    padding: 1rem 1rem !important;
+    margin-left: 2rem;
+}
+
+.application-node .node-header:hover {
+    background-color: rgba(56, 189, 248, 0.03) !important;
+    border-bottom-color: var(--accent-primary) !important;
+}
+
+.application-node:last-child .node-header {
+    border-bottom: none !important;
+}
+
+.app-details {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.version-tag {
+    font-family: 'Roboto Mono', monospace !important;
+    font-size: 0.75rem !important;
+    color: var(--accent-primary) !important;
+    background-color: rgba(56, 189, 248, 0.15) !important;
+    padding: 0.25rem 0.75rem !important;
+    border-radius: 999px !important;
+    font-weight: 600;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    margin-left: 0.5rem !important;
+}
+
+/* Expand Icon - Smooth Animation */
+.expand-icon {
+    color: var(--text-muted) !important;
+    font-size: 0.875rem !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    width: 1.25rem !important;
+    height: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    text-align: center !important;
+}
+
+.expand-icon-placeholder {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.node-header.expanded .expand-icon {
+    transform: rotate(90deg) !important;
+    background-color: rgba(56, 189, 248, 0.15);
+    color: var(--accent-primary) !important;
+}
+
+/* Form Actions - Enhanced */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 3rem !important;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-subtle);
+    justify-content: flex-end;
+}
+
+.form-actions .btn-primary,
+.form-actions .btn-secondary {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+}
+
+.form-actions .btn-primary {
+    box-shadow: 0 4px 12px -2px rgba(56, 189, 248, 0.3);
+}
+
+.form-actions .btn-primary:hover {
+    box-shadow: 0 6px 16px -2px rgba(56, 189, 248, 0.4);
+}

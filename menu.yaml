@@ -1,0 +1,50 @@
+fr (choix de la communauté):
+  core (choix de la plateforme):
+    ihm (type d'application):
+      webapp-plf (application):
+        version (version de l'application, champ de saisie de la version de l'application):
+        archive-file (optionnel, champ de saisi du chemin complet de l'archive):
+      webapp-plbinf (application):
+        version (version de l'application, champ de saisie de la version de l'application):
+        archive-file (optionnel, champ de saisi du chemin complet de l'archive):
+      plf (application):
+        version (version de l'application, champ de saisie de la version de l'application):
+        archive-file (optionnel, champ de saisi du chemin complet de l'archive):
+      webservice-a2a (application):
+        version (version de l'application, champ de saisie de la version de l'application):
+        archive-file (optionnel, champ de saisi du chemin complet de l'archive):
+
+    flux (type d'application):
+      core-xchg:
+        version (version de core-xchg, champ de saisie de la version de l'application):
+        archive-file (optionnel, champ de saisi du chemin complet de l'archive):
+
+  acore (choix de la plateforme):
+    ihm (type d'application):
+      pilad:
+        version (version de pilad, champ de saisie de la version de l'application):
+        archive-file (optionnel, champ de saisi du chemin complet de l'archive):
+    flux (type d'application):
+      acore:
+        version (version de acore, champ de saisie de la version de l'application):
+        archive-file (optionnel, champ de saisi du chemin complet de l'archive):
+
+be (choix de la communauté):
+  ihm (type d'application):
+    webapp-plf (application):
+      version (version de l'application, champ de saisie de la version de l'application):
+      archive-file (optionnel, champ de saisi du chemin complet de l'archive):
+    webapp-plbinf (application):
+      version (version de l'application, champ de saisie de la version de l'application):
+      archive-file (optionnel, champ de saisi du chemin complet de l'archive):
+    plf (application):
+      version (version de l'application, champ de saisie de la version de l'application):
+      archive-file (optionnel, champ de saisi du chemin complet de l'archive):
+    webservice-a2a (application):
+      version (version de l'application, champ de saisie de la version de l'application):
+      archive-file (optionnel, champ de saisi du chemin complet de l'archive):
+
+  flux (type d'application):
+    core-xchg:
+      version (version de core-xchg, champ de saisie de la version de l'application):
+      archive-file (optionnel, champ de saisi du chemin complet de l'archive):

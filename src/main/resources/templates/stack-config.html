@@ -4,23 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configuration de Stack - Core Monitor</title>
-    <!-- Use the new Neutral Dark Theme CSS -->
     <link rel="stylesheet" th:href="@{/css/dark-theme.css}">
-
-    <!-- Google Fonts: Inter + Roboto Mono -->
+    <link rel="stylesheet" th:href="@{/css/stack-wizard.css}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
-<body th:attr="data-existing-community=${existingCommunity}, data-existing-selections=${existingSelections != null ? #strings.arrayJoin(existingSelections.toArray(), ',') : ''}">
+<body>
     <div class="layout-container">
-        <!-- Header Fragment: Passing Check for Active Tab -->
         <header class="main-header">
             <div class="brand-logo">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="8" x2="12" y2="16"></line>
                     <line x1="8" y1="12" x2="16" y2="12"></line>
@@ -28,362 +22,151 @@
                 Core Monitor
             </div>
             <nav class="nav-links">
-                <a href="/" class="nav-link"
-                    th:classappend="${currentPage == 'dashboard' or currentPage == null} ? 'active' : ''">Dashboard</a>
-                <a href="/stack-config" class="nav-link"
-                    th:classappend="${currentPage == 'stack-config'} ? 'active' : ''">Stack</a>
-                <a href="/settings" class="nav-link"
-                    th:classappend="${currentPage == 'settings'} ? 'active' : ''">Settings</a>
+                <a href="/" class="nav-link">Dashboard</a>
+                <a href="/stack-config" class="nav-link active">Stack</a>
+                <a href="/settings" class="nav-link">Settings</a>
             </nav>
         </header>
         
         <main>
-            <div class="stack-config-header">
-                <div>
-                    <h1 class="page-title">Configuration de la Stack</h1>
-                    <p style="color: var(--text-secondary); margin-bottom: 0;">Composez votre stack applicative core-xchg</p>
+            <div class="wizard-header">
+                <h1 class="page-title">Configuration de la Stack</h1>
+                <p class="wizard-subtitle">Composez votre stack applicative en quelques étapes</p>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="wizard-progress">
+                <div class="progress-step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Communauté</div>
                 </div>
-                <div class="selection-counter">
-                    <div class="counter-badge">
-                        <span class="counter-value" id="selectionCount">0</span>
-                        <span class="counter-label">Applications sélectionnées</span>
-                    </div>
+                <div class="progress-line"></div>
+                <div class="progress-step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Plateforme</div>
+                </div>
+                <div class="progress-line"></div>
+                <div class="progress-step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Type</div>
+                </div>
+                <div class="progress-line"></div>
+                <div class="progress-step" data-step="4">
+                    <div class="step-number">4</div>
+                    <div class="step-label">Applications</div>
+                </div>
+                <div class="progress-line"></div>
+                <div class="progress-step" data-step="5">
+                    <div class="step-number">5</div>
+                    <div class="step-label">Récapitulatif</div>
                 </div>
             </div>
 
-            <form id="stackForm" action="/stack-config/validate" method="post">
-                <!-- Niveau 1: Communauté (Radio buttons) -->
-                <div class="config-section">
-                    <h2 class="section-title">
-                        <span class="level-badge">Niveau 1</span>
-                        Communauté
-                    </h2>
-                    <div class="community-selector">
-                        <label class="radio-card">
-                            <input type="radio" name="community" value="fr" checked onchange="switchCommunity('fr')">
-                            <div class="radio-content">
-                                <span class="radio-icon">🇫🇷</span>
-                                <span class="radio-label">France (FR)</span>
+            <form id="wizardForm" action="/stack-config/validate" method="post">
+                <!-- Step 1: Community Selection -->
+                <div class="wizard-step active" id="step-1">
+                    <div class="step-content">
+                        <h2 class="step-title">Sélectionnez votre communauté</h2>
+                        <p class="step-description">Choisissez la communauté pour laquelle vous souhaitez configurer la stack</p>
+                        
+                        <div class="choice-grid">
+                            <div class="choice-card" data-value="fr" onclick="selectCommunity('fr')">
+                                <div class="choice-icon">🇫🇷</div>
+                                <div class="choice-title">France</div>
+                                <div class="choice-description">Configuration pour la communauté française</div>
                             </div>
-                        </label>
-                        <label class="radio-card">
-                            <input type="radio" name="community" value="be" onchange="switchCommunity('be')">
-                            <div class="radio-content">
-                                <span class="radio-icon">🇧🇪</span>
-                                <span class="radio-label">Belgique (BE)</span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Niveau 2, 3, 4: Arborescence pour FR -->
-                <div id="tree-fr" class="tree-container">
-                    <div class="config-section">
-                        <h2 class="section-title">
-                            <span class="level-badge">Niveaux 2-4</span>
-                            Plateformes, Composants et Applications
-                        </h2>
-
-                        <!-- Platform: core -->
-                        <div class="tree-node platform-node">
-                            <div class="node-header" onclick="toggleNode(this)">
-                                <span class="expand-icon">▶</span>
-                                <input type="checkbox" class="node-checkbox platform-checkbox" 
-                                       id="fr-core" onchange="toggleChildren(this)">
-                                <label for="fr-core" class="node-label">
-                                    <span class="node-icon">📦</span>
-                                    <span class="node-text">core</span>
-                                    <span class="node-badge">Plateforme</span>
-                                </label>
-                            </div>
-                            <div class="node-children">
-                                <!-- Component: ihm -->
-                                <div class="tree-node component-node">
-                                    <div class="node-header" onclick="toggleNode(this)">
-                                        <span class="expand-icon">▶</span>
-                                        <input type="checkbox" class="node-checkbox component-checkbox" 
-                                               id="fr-core-ihm" onchange="toggleChildren(this)" data-parent="fr-core">
-                                        <label for="fr-core-ihm" class="node-label">
-                                            <span class="node-icon">🖥️</span>
-                                            <span class="node-text">ihm</span>
-                                            <span class="node-badge">Composant</span>
-                                        </label>
-                                    </div>
-                                    <div class="node-children">
-                                        <!-- Application: plf -->
-                                        <div class="tree-node application-node">
-                                            <div class="node-header">
-                                                <span class="expand-icon-placeholder"></span>
-                                                <input type="checkbox" class="node-checkbox application-checkbox" 
-                                                       name="selections" value="core|ihm|plf|1.2.3:/home/lmara/plf.tar.gz"
-                                                       id="fr-core-ihm-plf" data-parent="fr-core-ihm">
-                                                <label for="fr-core-ihm-plf" class="node-label">
-                                                    <span class="node-icon">📄</span>
-                                                    <span class="node-text">plf</span>
-                                                    <span class="node-badge app-badge">Application</span>
-                                                    <span class="app-details">
-                                                        <span class="version-tag">v1.2.3</span>
-                                                    </span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <!-- Application: plb-inf -->
-                                        <div class="tree-node application-node">
-                                            <div class="node-header">
-                                                <span class="expand-icon-placeholder"></span>
-                                                <input type="checkbox" class="node-checkbox application-checkbox" 
-                                                       name="selections" value="core|ihm|plb-inf|1.2.3:/home/lmara/plf.tar.gz"
-                                                       id="fr-core-ihm-plbinf" data-parent="fr-core-ihm">
-                                                <label for="fr-core-ihm-plbinf" class="node-label">
-                                                    <span class="node-icon">📄</span>
-                                                    <span class="node-text">plb-inf</span>
-                                                    <span class="node-badge app-badge">Application</span>
-                                                    <span class="app-details">
-                                                        <span class="version-tag">v1.2.3</span>
-                                                    </span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Component: flux -->
-                                <div class="tree-node component-node">
-                                    <div class="node-header" onclick="toggleNode(this)">
-                                        <span class="expand-icon">▶</span>
-                                        <input type="checkbox" class="node-checkbox component-checkbox" 
-                                               id="fr-core-flux" onchange="toggleChildren(this)" data-parent="fr-core">
-                                        <label for="fr-core-flux" class="node-label">
-                                            <span class="node-icon">🔄</span>
-                                            <span class="node-text">flux</span>
-                                            <span class="node-badge">Composant</span>
-                                        </label>
-                                    </div>
-                                    <div class="node-children">
-                                        <!-- Application: core-xchg-version -->
-                                        <div class="tree-node application-node">
-                                            <div class="node-header">
-                                                <span class="expand-icon-placeholder"></span>
-                                                <input type="checkbox" class="node-checkbox application-checkbox" 
-                                                       name="selections" value="core|flux|core-xchg-version|1.2.3:/home/lmara/plf.tar.gz"
-                                                       id="fr-core-flux-xchg" data-parent="fr-core-flux">
-                                                <label for="fr-core-flux-xchg" class="node-label">
-                                                    <span class="node-icon">📄</span>
-                                                    <span class="node-text">core-xchg-version</span>
-                                                    <span class="node-badge app-badge">Application</span>
-                                                    <span class="app-details">
-                                                        <span class="version-tag">v1.2.3</span>
-                                                    </span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Platform: acore -->
-                        <div class="tree-node platform-node">
-                            <div class="node-header" onclick="toggleNode(this)">
-                                <span class="expand-icon">▶</span>
-                                <input type="checkbox" class="node-checkbox platform-checkbox" 
-                                       id="fr-acore" onchange="toggleChildren(this)">
-                                <label for="fr-acore" class="node-label">
-                                    <span class="node-icon">📦</span>
-                                    <span class="node-text">acore</span>
-                                    <span class="node-badge">Plateforme</span>
-                                </label>
-                            </div>
-                            <div class="node-children">
-                                <!-- Component: ihm -->
-                                <div class="tree-node component-node">
-                                    <div class="node-header" onclick="toggleNode(this)">
-                                        <span class="expand-icon">▶</span>
-                                        <input type="checkbox" class="node-checkbox component-checkbox" 
-                                               id="fr-acore-ihm" onchange="toggleChildren(this)" data-parent="fr-acore">
-                                        <label for="fr-acore-ihm" class="node-label">
-                                            <span class="node-icon">🖥️</span>
-                                            <span class="node-text">ihm</span>
-                                            <span class="node-badge">Composant</span>
-                                        </label>
-                                    </div>
-                                    <div class="node-children">
-                                        <!-- Application: pilad -->
-                                        <div class="tree-node application-node">
-                                            <div class="node-header">
-                                                <span class="expand-icon-placeholder"></span>
-                                                <input type="checkbox" class="node-checkbox application-checkbox" 
-                                                       name="selections" value="acore|ihm|pilad|1.2.3:/home/lmara/plf.tar.gz"
-                                                       id="fr-acore-ihm-pilad" data-parent="fr-acore-ihm">
-                                                <label for="fr-acore-ihm-pilad" class="node-label">
-                                                    <span class="node-icon">📄</span>
-                                                    <span class="node-text">pilad</span>
-                                                    <span class="node-badge app-badge">Application</span>
-                                                    <span class="app-details">
-                                                        <span class="version-tag">v1.2.3</span>
-                                                    </span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Component: flux -->
-                                <div class="tree-node component-node">
-                                    <div class="node-header" onclick="toggleNode(this)">
-                                        <span class="expand-icon">▶</span>
-                                        <input type="checkbox" class="node-checkbox component-checkbox" 
-                                               id="fr-acore-flux" onchange="toggleChildren(this)" data-parent="fr-acore">
-                                        <label for="fr-acore-flux" class="node-label">
-                                            <span class="node-icon">🔄</span>
-                                            <span class="node-text">flux</span>
-                                            <span class="node-badge">Composant</span>
-                                        </label>
-                                    </div>
-                                    <div class="node-children">
-                                        <!-- Application: acore-version -->
-                                        <div class="tree-node application-node">
-                                            <div class="node-header">
-                                                <span class="expand-icon-placeholder"></span>
-                                                <input type="checkbox" class="node-checkbox application-checkbox" 
-                                                       name="selections" value="acore|flux|acore-version|1.2.3:/home/lmara/plf.tar.gz"
-                                                       id="fr-acore-flux-version" data-parent="fr-acore-flux">
-                                                <label for="fr-acore-flux-version" class="node-label">
-                                                    <span class="node-icon">📄</span>
-                                                    <span class="node-text">acore-version</span>
-                                                    <span class="node-badge app-badge">Application</span>
-                                                    <span class="app-details">
-                                                        <span class="version-tag">v1.2.3</span>
-                                                    </span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="choice-card" data-value="be" onclick="selectCommunity('be')">
+                                <div class="choice-icon">🇧🇪</div>
+                                <div class="choice-title">Belgique</div>
+                                <div class="choice-description">Configuration pour la communauté belge</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Niveau 2, 3, 4: Arborescence pour BE -->
-                <div id="tree-be" class="tree-container" style="display: none;">
-                    <div class="config-section">
-                        <h2 class="section-title">
-                            <span class="level-badge">Niveaux 2-4</span>
-                            Plateformes, Composants et Applications
-                        </h2>
-
-                        <!-- Platform: core (BE only has core) -->
-                        <div class="tree-node platform-node">
-                            <div class="node-header" onclick="toggleNode(this)">
-                                <span class="expand-icon">▶</span>
-                                <input type="checkbox" class="node-checkbox platform-checkbox" 
-                                       id="be-core" onchange="toggleChildren(this)">
-                                <label for="be-core" class="node-label">
-                                    <span class="node-icon">📦</span>
-                                    <span class="node-text">core</span>
-                                    <span class="node-badge">Plateforme</span>
-                                </label>
-                            </div>
-                            <div class="node-children">
-                                <!-- Component: ihm -->
-                                <div class="tree-node component-node">
-                                    <div class="node-header" onclick="toggleNode(this)">
-                                        <span class="expand-icon">▶</span>
-                                        <input type="checkbox" class="node-checkbox component-checkbox" 
-                                               id="be-core-ihm" onchange="toggleChildren(this)" data-parent="be-core">
-                                        <label for="be-core-ihm" class="node-label">
-                                            <span class="node-icon">🖥️</span>
-                                            <span class="node-text">ihm</span>
-                                            <span class="node-badge">Composant</span>
-                                        </label>
-                                    </div>
-                                    <div class="node-children">
-                                        <!-- Application: plf -->
-                                        <div class="tree-node application-node">
-                                            <div class="node-header">
-                                                <span class="expand-icon-placeholder"></span>
-                                                <input type="checkbox" class="node-checkbox application-checkbox" 
-                                                       name="selections" value="core|ihm|plf|1.2.3:/home/lmara/plf.tar.gz"
-                                                       id="be-core-ihm-plf" data-parent="be-core-ihm">
-                                                <label for="be-core-ihm-plf" class="node-label">
-                                                    <span class="node-icon">📄</span>
-                                                    <span class="node-text">plf</span>
-                                                    <span class="node-badge app-badge">Application</span>
-                                                    <span class="app-details">
-                                                        <span class="version-tag">v1.2.3</span>
-                                                    </span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <!-- Application: plb-inf -->
-                                        <div class="tree-node application-node">
-                                            <div class="node-header">
-                                                <span class="expand-icon-placeholder"></span>
-                                                <input type="checkbox" class="node-checkbox application-checkbox" 
-                                                       name="selections" value="core|ihm|plb-inf|1.2.3:/home/lmara/plf.tar.gz"
-                                                       id="be-core-ihm-plbinf" data-parent="be-core-ihm">
-                                                <label for="be-core-ihm-plbinf" class="node-label">
-                                                    <span class="node-icon">📄</span>
-                                                    <span class="node-text">plb-inf</span>
-                                                    <span class="node-badge app-badge">Application</span>
-                                                    <span class="app-details">
-                                                        <span class="version-tag">v1.2.3</span>
-                                                    </span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Component: flux -->
-                                <div class="tree-node component-node">
-                                    <div class="node-header" onclick="toggleNode(this)">
-                                        <span class="expand-icon">▶</span>
-                                        <input type="checkbox" class="node-checkbox component-checkbox" 
-                                               id="be-core-flux" onchange="toggleChildren(this)" data-parent="be-core">
-                                        <label for="be-core-flux" class="node-label">
-                                            <span class="node-icon">🔄</span>
-                                            <span class="node-text">flux</span>
-                                            <span class="node-badge">Composant</span>
-                                        </label>
-                                    </div>
-                                    <div class="node-children">
-                                        <!-- Application: core-xchg-version -->
-                                        <div class="tree-node application-node">
-                                            <div class="node-header">
-                                                <span class="expand-icon-placeholder"></span>
-                                                <input type="checkbox" class="node-checkbox application-checkbox" 
-                                                       name="selections" value="core|flux|core-xchg-version|1.2.3:/home/lmara/plf.tar.gz"
-                                                       id="be-core-flux-xchg" data-parent="be-core-flux">
-                                                <label for="be-core-flux-xchg" class="node-label">
-                                                    <span class="node-icon">📄</span>
-                                                    <span class="node-text">core-xchg-version</span>
-                                                    <span class="node-badge app-badge">Application</span>
-                                                    <span class="app-details">
-                                                        <span class="version-tag">v1.2.3</span>
-                                                    </span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                <!-- Step 2: Platform Selection (FR only) -->
+                <div class="wizard-step" id="step-2">
+                    <div class="step-content">
+                        <h2 class="step-title">Sélectionnez la plateforme</h2>
+                        <p class="step-description">Choisissez la plateforme applicative</p>
+                        
+                        <div class="choice-grid" id="platformChoices">
+                            <!-- Dynamically populated -->
                         </div>
                     </div>
                 </div>
 
-                <!-- Submit Button -->
-                <div class="form-actions">
-                    <button type="submit" class="btn-primary">
-                        <span class="btn-icon">✓</span>
+                <!-- Step 3: Application Type Selection -->
+                <div class="wizard-step" id="step-3">
+                    <div class="step-content">
+                        <h2 class="step-title">Sélectionnez le type d'application</h2>
+                        <p class="step-description">Choisissez le type d'application à déployer</p>
+                        
+                        <div class="choice-grid" id="typeChoices">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Application Selection with Details -->
+                <div class="wizard-step" id="step-4">
+                    <div class="step-content">
+                        <h2 class="step-title">Configurez vos applications</h2>
+                        <p class="step-description">Sélectionnez les applications et renseignez leurs détails</p>
+                        
+                        <div class="applications-list" id="applicationsList">
+                            <!-- Dynamically populated -->
+                        </div>
+                        
+                        <button type="button" class="btn-add-more" onclick="addAnotherApp()" style="display: none;">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="10" y1="5" x2="10" y2="15"></line>
+                                <line x1="5" y1="10" x2="15" y2="10"></line>
+                            </svg>
+                            Ajouter une autre application
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 5: Summary -->
+                <div class="wizard-step" id="step-5">
+                    <div class="step-content">
+                        <h2 class="step-title">Récapitulatif de votre configuration</h2>
+                        <p class="step-description">Vérifiez votre configuration avant de valider</p>
+                        
+                        <div class="summary-container" id="summaryContainer">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="wizard-navigation">
+                    <button type="button" class="btn btn-secondary" id="prevBtn" onclick="previousStep()" style="display: none;">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="12 5 7 10 12 15"></polyline>
+                        </svg>
+                        Précédent
+                    </button>
+                    <button type="button" class="btn btn-primary" id="nextBtn" onclick="nextStep()">
+                        Suivant
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="8 5 13 10 8 15"></polyline>
+                        </svg>
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn" style="display: none;">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="4 10 8 14 16 6"></polyline>
+                        </svg>
                         Valider la configuration
                     </button>
-                    <button type="button" class="btn-secondary" onclick="resetForm()">
-                        <span class="btn-icon">↺</span>
-                        Réinitialiser
-                    </button>
                 </div>
+
+                <!-- Hidden inputs for form submission -->
+                <input type="hidden" name="community" id="selectedCommunity">
+                <input type="hidden" name="platform" id="selectedPlatform">
+                <input type="hidden" name="appType" id="selectedAppType">
+                <div id="hiddenSelections"></div>
             </form>
         </main>
         
@@ -392,6 +175,6 @@
         </footer>
     </div>
 
-    <script th:src="@{/js/stack-config.js}"></script>
+    <script th:src="@{/js/stack-wizard.js}"></script>
 </body>
 </html>

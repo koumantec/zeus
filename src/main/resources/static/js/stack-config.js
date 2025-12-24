@@ -1,3 +1,17 @@
+// Update selection counter
+function updateSelectionCounter() {
+    const selectedApps = document.querySelectorAll('.application-checkbox:checked');
+    const counter = document.getElementById('selectionCount');
+    if (counter) {
+        counter.textContent = selectedApps.length;
+        // Add animation
+        counter.style.transform = 'scale(1.2)';
+        setTimeout(() => {
+            counter.style.transform = 'scale(1)';
+        }, 200);
+    }
+}
+
 // Toggle node expansion
 function toggleNode(element) {
     // Don't toggle if clicking on checkbox or label
@@ -9,8 +23,8 @@ function toggleNode(element) {
     const children = element.parentElement.querySelector('.node-children');
     
     if (expandIcon && children) {
-        expandIcon.classList.toggle('expanded');
-        children.classList.toggle('expanded');
+        element.classList.toggle('expanded');
+        children.classList.toggle('open');
     }
 }
 
@@ -70,14 +84,31 @@ function updateParentCheckbox(checkbox) {
     }
 }
 
-// Switch community (FR/BE)
+// Switch community (FR/BE) with animation
 function switchCommunity(community) {
-    // Hide all trees
-    document.getElementById('tree-fr').style.display = 'none';
-    document.getElementById('tree-be').style.display = 'none';
+    if (!community) {
+        // Hide all trees if no community selected
+        document.getElementById('tree-fr').style.display = 'none';
+        document.getElementById('tree-be').style.display = 'none';
+        return;
+    }
     
-    // Show selected tree
-    document.getElementById('tree-' + community).style.display = 'block';
+    // Hide all trees first
+    const allTrees = document.querySelectorAll('.tree-container');
+    allTrees.forEach(tree => {
+        tree.style.display = 'none';
+    });
+    
+    // Show selected tree with animation
+    const selectedTree = document.getElementById('tree-' + community);
+    if (selectedTree) {
+        selectedTree.style.display = 'block';
+        // Trigger reflow to restart animation
+        selectedTree.style.animation = 'none';
+        setTimeout(() => {
+            selectedTree.style.animation = '';
+        }, 10);
+    }
     
     // Uncheck all checkboxes in hidden tree
     const hiddenTree = community === 'fr' ? 'tree-be' : 'tree-fr';
@@ -85,13 +116,21 @@ function switchCommunity(community) {
     hiddenCheckboxes.forEach(cb => {
         cb.checked = false;
     });
+    
+    // Update counter
+    updateSelectionCounter();
 }
 
 // Reset form
 function resetForm() {
-    // Reset community to FR
-    document.querySelector('input[name="community"][value="fr"]').checked = true;
-    switchCommunity('fr');
+    // Reset community dropdown
+    const communitySelect = document.getElementById('communitySelect');
+    if (communitySelect) {
+        communitySelect.value = '';
+    }
+    
+    // Hide all trees
+    switchCommunity('');
     
     // Uncheck all checkboxes
     document.querySelectorAll('.node-checkbox').forEach(cb => {
@@ -102,10 +141,14 @@ function resetForm() {
     // Collapse all nodes
     document.querySelectorAll('.node-children').forEach(children => {
         children.classList.remove('expanded');
+        children.classList.remove('open');
     });
-    document.querySelectorAll('.expand-icon').forEach(icon => {
-        icon.classList.remove('expanded');
+    document.querySelectorAll('.node-header').forEach(header => {
+        header.classList.remove('expanded');
     });
+    
+    // Update counter
+    updateSelectionCounter();
 }
 
 // Form validation
@@ -125,10 +168,10 @@ function loadExistingSelections(community, selections) {
         return;
     }
     
-    // Set community radio button
-    const communityRadio = document.querySelector(`input[name="community"][value="${community}"]`);
-    if (communityRadio) {
-        communityRadio.checked = true;
+    // Set community dropdown
+    const communitySelect = document.getElementById('communitySelect');
+    if (communitySelect) {
+        communitySelect.value = community;
         switchCommunity(community);
     }
     
@@ -163,17 +206,28 @@ function loadExistingSelections(community, selections) {
     });
 }
 
-// Add change listeners to all application checkboxes to update parents
+// Add change listeners to all application checkboxes to update parents and counter
 document.addEventListener('DOMContentLoaded', function() {
+    // Update counter on page load
+    updateSelectionCounter();
+    
     document.querySelectorAll('.application-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             updateParentCheckbox(this);
+            updateSelectionCounter();
         });
     });
     
     document.querySelectorAll('.component-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             updateParentCheckbox(this);
+            updateSelectionCounter();
+        });
+    });
+    
+    document.querySelectorAll('.platform-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelectionCounter();
         });
     });
     
