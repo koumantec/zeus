@@ -18,8 +18,26 @@
 
 <body>
     <div class="layout-container">
-        <!-- Re-using header fragment -->
-        <div th:replace="~{fragments/header :: header(currentPage='settings')}"></div>
+        <!-- Header Fragment: Passing Check for Active Tab -->
+        <header class="main-header">
+            <div class="brand-logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                Core Monitor
+            </div>
+            <nav class="nav-links">
+                <a href="/" class="nav-link"
+                    th:classappend="${currentPage == 'dashboard' or currentPage == null} ? 'active' : ''">Dashboard</a>
+                <a href="/stack-config" class="nav-link"
+                    th:classappend="${currentPage == 'stack-config'} ? 'active' : ''">Stack</a>
+                <a href="/settings" class="nav-link"
+                    th:classappend="${currentPage == 'settings'} ? 'active' : ''">Settings</a>
+            </nav>
+        </header>
 
         <main>
             <div style="max-width: 600px; margin: 0 auto;">

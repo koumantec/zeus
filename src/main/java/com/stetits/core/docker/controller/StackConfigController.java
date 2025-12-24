@@ -19,6 +19,9 @@ public class StackConfigController {
 
     @GetMapping("/stack-config")
     public String showStackConfig(Model model) {
+        // Set current page for navigation
+        model.addAttribute("currentPage", "stack-config");
+        
         // Load existing configuration if available
         StackConfiguration existingConfig = stackConfigService.loadStackConfiguration();
         if (existingConfig != null) {
@@ -36,10 +39,14 @@ public class StackConfigController {
             Model model) {
         
         if (community == null || selections == null || selections.isEmpty()) {
+            model.addAttribute("currentPage", "stack-config");
             model.addAttribute("error", "Veuillez sélectionner au moins une application");
             return "stack-config";
         }
 
+        // Set current page for navigation
+        model.addAttribute("currentPage", "stack-config");
+        
         StackConfiguration config = parseSelections(community, selections);
         model.addAttribute("config", config);
         
@@ -53,6 +60,7 @@ public class StackConfigController {
             Model model) {
         
         if (community == null || selections == null || selections.isEmpty()) {
+            model.addAttribute("currentPage", "stack-config");
             model.addAttribute("error", "Veuillez sélectionner au moins une application");
             return "stack-config";
         }
@@ -62,10 +70,13 @@ public class StackConfigController {
         // Save the configuration
         try {
             stackConfigService.saveStackConfiguration(config);
+            // Set current page for navigation
+            model.addAttribute("currentPage", "stack-config");
             model.addAttribute("success", "Configuration enregistrée avec succès");
             model.addAttribute("config", config);
             return "stack-confirmation";
         } catch (Exception e) {
+            model.addAttribute("currentPage", "stack-config");
             model.addAttribute("error", "Erreur lors de l'enregistrement de la configuration");
             return "stack-config";
         }

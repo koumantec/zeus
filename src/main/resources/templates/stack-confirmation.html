@@ -4,18 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Confirmation - Core Monitor</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <link rel="stylesheet" th:href="@{/css/stack-config.css}">
+    <!-- Use the new Neutral Dark Theme CSS -->
+    <link rel="stylesheet" th:href="@{/css/dark-theme.css}">
+
+    <!-- Google Fonts: Inter + Roboto Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <div th:replace="~{fragments/header :: header(currentPage='confirmation')}"></div>
+    <div class="layout-container">
+        <!-- Header Fragment: Passing Check for Active Tab -->
+        <header class="main-header">
+            <div class="brand-logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                Core Monitor
+            </div>
+            <nav class="nav-links">
+                <a href="/" class="nav-link"
+                    th:classappend="${currentPage == 'dashboard' or currentPage == null} ? 'active' : ''">Dashboard</a>
+                <a href="/stack-config" class="nav-link"
+                    th:classappend="${currentPage == 'stack-config'} ? 'active' : ''">Stack</a>
+                <a href="/settings" class="nav-link"
+                    th:classappend="${currentPage == 'settings'} ? 'active' : ''">Settings</a>
+            </nav>
+        </header>
         
-        <div class="main-content">
-            <div class="confirmation-header">
-                <div class="success-icon">✓</div>
-                <h1 class="title">Configuration Validée</h1>
-                <p class="subtitle">Récapitulatif de votre stack applicative</p>
+        <main>
+            <div style="text-align: center; margin-bottom: 3rem;">
+                <div style="font-size: 4rem; color: var(--status-success); margin-bottom: 1rem;">✓</div>
+                <h1 class="page-title" style="margin-bottom: 0.5rem;">Configuration Validée</h1>
+                <p style="color: var(--text-secondary);">Récapitulatif de votre stack applicative</p>
             </div>
 
             <div class="confirmation-content">
@@ -109,9 +135,11 @@
                     </button>
                 </div>
             </div>
-        </div>
+        </main>
         
-        <div th:replace="~{fragments/footer :: footer(footerText='Core Monitor - Configuration de Stack')}"></div>
+        <footer class="main-footer">
+            <p>&copy; 2024 Core Monitor &middot; Confirmation</p>
+        </footer>
     </div>
 
     <script>

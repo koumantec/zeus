@@ -17,6 +17,9 @@ public class SettingsController {
 
     @GetMapping("/settings")
     public String settings(Model model) {
+        // Set current page for navigation
+        model.addAttribute("currentPage", "settings");
+        
         model.addAttribute("githubUsername", settingsService.getGithubUsername());
         model.addAttribute("githubPassword", settingsService.getGithubPassword());
         return "settings";

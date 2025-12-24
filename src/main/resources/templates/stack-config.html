@@ -4,17 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configuration de Stack - Core Monitor</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <link rel="stylesheet" th:href="@{/css/stack-config.css}">
+    <!-- Use the new Neutral Dark Theme CSS -->
+    <link rel="stylesheet" th:href="@{/css/dark-theme.css}">
+
+    <!-- Google Fonts: Inter + Roboto Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
 </head>
 <body th:attr="data-existing-community=${existingCommunity}, data-existing-selections=${existingSelections != null ? #strings.arrayJoin(existingSelections.toArray(), ',') : ''}">
-    <div class="container">
-        <div th:replace="~{fragments/header :: header(currentPage='stack-config')}"></div>
+    <div class="layout-container">
+        <!-- Header Fragment: Passing Check for Active Tab -->
+        <header class="main-header">
+            <div class="brand-logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                Core Monitor
+            </div>
+            <nav class="nav-links">
+                <a href="/" class="nav-link"
+                    th:classappend="${currentPage == 'dashboard' or currentPage == null} ? 'active' : ''">Dashboard</a>
+                <a href="/stack-config" class="nav-link"
+                    th:classappend="${currentPage == 'stack-config'} ? 'active' : ''">Stack</a>
+                <a href="/settings" class="nav-link"
+                    th:classappend="${currentPage == 'settings'} ? 'active' : ''">Settings</a>
+            </nav>
+        </header>
         
-        <div class="main-content">
-            <div class="config-header">
-                <h1 class="title">Configuration de la Stack Core-Xchg</h1>
-                <p class="subtitle">Sélectionnez les composants de votre stack applicative core-xchg</p>
+        <main>
+            <div class="stack-config-header">
+                <div>
+                    <h1 class="page-title">Configuration de la Stack</h1>
+                    <p style="color: var(--text-secondary); margin-bottom: 0;">Composez votre stack applicative core-xchg</p>
+                </div>
+                <div class="selection-counter">
+                    <div class="counter-badge">
+                        <span class="counter-value" id="selectionCount">0</span>
+                        <span class="counter-label">Applications sélectionnées</span>
+                    </div>
+                </div>
             </div>
 
             <form id="stackForm" action="/stack-config/validate" method="post">
@@ -351,9 +385,11 @@
                     </button>
                 </div>
             </form>
-        </div>
+        </main>
         
-        <div th:replace="~{fragments/footer :: footer(footerText='Core Monitor - Configuration de Stack')}"></div>
+        <footer class="main-footer">
+            <p>&copy; 2024 Core Monitor &middot; Configuration de Stack</p>
+        </footer>
     </div>
 
     <script th:src="@{/js/stack-config.js}"></script>

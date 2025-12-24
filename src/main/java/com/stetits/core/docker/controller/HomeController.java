@@ -29,6 +29,9 @@ public class HomeController {
             return "redirect:/settings";
         }
 
+        // Set current page for navigation
+        model.addAttribute("currentPage", "dashboard");
+
         // Load Mock Docker containers for prototype
         try {
             model.addAttribute("containers", mockDockerService.listContainers());
