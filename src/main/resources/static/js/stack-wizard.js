@@ -3,8 +3,8 @@ let wizardState = {
     currentStep: 1,
     totalSteps: 5,
     community: null,
-    platform: null,
-    appType: null,
+    platforms: [],
+    appTypes: [],
     selectedApps: []
 };
 
@@ -46,34 +46,48 @@ function selectCommunity(community) {
     document.getElementById('nextBtn').disabled = false;
 }
 
-// Platform Selection
-function selectPlatform(platform) {
-    wizardState.platform = platform;
-    document.getElementById('selectedPlatform').value = platform;
+// Platform Selection (multiple)
+function togglePlatform(platform) {
+    const index = wizardState.platforms.indexOf(platform);
+    const card = document.querySelector(`#step-2 .choice-card[data-value="${platform}"]`);
     
-    // Update UI
-    document.querySelectorAll('#step-2 .choice-card').forEach(card => {
+    if (index > -1) {
+        // Deselect
+        wizardState.platforms.splice(index, 1);
         card.classList.remove('selected');
-    });
-    document.querySelector(`#step-2 .choice-card[data-value="${platform}"]`).classList.add('selected');
+    } else {
+        // Select
+        wizardState.platforms.push(platform);
+        card.classList.add('selected');
+    }
     
-    // Enable next button
-    document.getElementById('nextBtn').disabled = false;
+    // Update hidden input
+    document.getElementById('selectedPlatform').value = wizardState.platforms.join(',');
+    
+    // Enable/disable next button
+    document.getElementById('nextBtn').disabled = wizardState.platforms.length === 0;
 }
 
-// App Type Selection
-function selectAppType(appType) {
-    wizardState.appType = appType;
-    document.getElementById('selectedAppType').value = appType;
+// App Type Selection (multiple)
+function toggleAppType(appType) {
+    const index = wizardState.appTypes.indexOf(appType);
+    const card = document.querySelector(`#step-3 .choice-card[data-value="${appType}"]`);
     
-    // Update UI
-    document.querySelectorAll('#step-3 .choice-card').forEach(card => {
+    if (index > -1) {
+        // Deselect
+        wizardState.appTypes.splice(index, 1);
         card.classList.remove('selected');
-    });
-    document.querySelector(`#step-3 .choice-card[data-value="${appType}"]`).classList.add('selected');
+    } else {
+        // Select
+        wizardState.appTypes.push(appType);
+        card.classList.add('selected');
+    }
     
-    // Enable next button
-    document.getElementById('nextBtn').disabled = false;
+    // Update hidden input
+    document.getElementById('selectedAppType').value = wizardState.appTypes.join(',');
+    
+    // Enable/disable next button
+    document.getElementById('nextBtn').disabled = wizardState.appTypes.length === 0;
 }
 
 // Toggle App Selection
@@ -106,11 +120,15 @@ function updateSelectedApps() {
     document.querySelectorAll('.app-checkbox:checked').forEach(checkbox => {
         const card = checkbox.closest('.app-config-card');
         const appName = checkbox.dataset.app;
+        const platform = checkbox.dataset.platform;
+        const appType = checkbox.dataset.type;
         const version = card.querySelector('input[name$="-version"]').value;
         const archive = card.querySelector('input[name$="-archive"]').value;
         
         wizardState.selectedApps.push({
             name: appName,
+            platform: platform,
+            type: appType,
             version: version,
             archive: archive
         });
@@ -164,14 +182,14 @@ function validateStep(step) {
             if (wizardState.community === 'be') {
                 return true;
             }
-            if (!wizardState.platform) {
-                alert('Veuillez sélectionner une plateforme');
+            if (wizardState.platforms.length === 0) {
+                alert('Veuillez sélectionner au moins une plateforme');
                 return false;
             }
             return true;
         case 3:
-            if (!wizardState.appType) {
-                alert('Veuillez sélectionner un type d\'application');
+            if (wizardState.appTypes.length === 0) {
+                alert('Veuillez sélectionner au moins un type d\'application');
                 return false;
             }
             return true;
@@ -221,10 +239,10 @@ function preparePlatformStep() {
         return;
     }
     
-    // For FR, show platform choices
+    // For FR, show platform choices (multiple selection)
     const platforms = Object.keys(menuStructure[wizardState.community]);
     platformChoices.innerHTML = platforms.map(platform => `
-        <div class="choice-card" data-value="${platform}" onclick="selectPlatform('${platform}')">
+        <div class="choice-card" data-value="${platform}" onclick="togglePlatform('${platform}')">
             <div class="choice-icon">📦</div>
             <div class="choice-title">${platform.toUpperCase()}</div>
             <div class="choice-description">Plateforme ${platform}</div>
@@ -235,12 +253,20 @@ function preparePlatformStep() {
 function prepareAppTypeStep() {
     const typeChoices = document.getElementById('typeChoices');
     
-    let appTypes;
+    // Collect all unique app types from selected platforms
+    let appTypesSet = new Set();
+    
     if (wizardState.community === 'be') {
-        appTypes = Object.keys(menuStructure.be);
+        Object.keys(menuStructure.be).forEach(type => appTypesSet.add(type));
     } else {
-        appTypes = Object.keys(menuStructure[wizardState.community][wizardState.platform]);
+        wizardState.platforms.forEach(platform => {
+            Object.keys(menuStructure[wizardState.community][platform]).forEach(type => {
+                appTypesSet.add(type);
+            });
+        });
     }
+    
+    const appTypes = Array.from(appTypesSet);
     
     const typeIcons = {
         'ihm': '🖥️',
@@ -253,7 +279,7 @@ function prepareAppTypeStep() {
     };
     
     typeChoices.innerHTML = appTypes.map(type => `
-        <div class="choice-card" data-value="${type}" onclick="selectAppType('${type}')">
+        <div class="choice-card" data-value="${type}" onclick="toggleAppType('${type}')">
             <div class="choice-icon">${typeIcons[type] || '📄'}</div>
             <div class="choice-title">${type.toUpperCase()}</div>
             <div class="choice-description">${typeLabels[type] || type}</div>
@@ -263,50 +289,81 @@ function prepareAppTypeStep() {
 
 function prepareApplicationsStep() {
     const applicationsList = document.getElementById('applicationsList');
+    let html = '';
     
-    let apps;
     if (wizardState.community === 'be') {
-        apps = menuStructure.be[wizardState.appType];
+        // For BE, group by app type
+        wizardState.appTypes.forEach(appType => {
+            const apps = menuStructure.be[appType];
+            html += `
+                <div class="app-group">
+                    <h3 class="app-group-title">${appType.toUpperCase()}</h3>
+                    <div class="app-group-content">
+                        ${apps.map(app => createAppCard(app, 'be', appType)).join('')}
+                    </div>
+                </div>
+            `;
+        });
     } else {
-        apps = menuStructure[wizardState.community][wizardState.platform][wizardState.appType];
+        // For FR, group by platform and app type
+        wizardState.platforms.forEach(platform => {
+            wizardState.appTypes.forEach(appType => {
+                if (menuStructure[wizardState.community][platform][appType]) {
+                    const apps = menuStructure[wizardState.community][platform][appType];
+                    html += `
+                        <div class="app-group">
+                            <h3 class="app-group-title">${platform.toUpperCase()} - ${appType.toUpperCase()}</h3>
+                            <div class="app-group-content">
+                                ${apps.map(app => createAppCard(app, platform, appType)).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        });
     }
     
-    applicationsList.innerHTML = apps.map(app => `
+    applicationsList.innerHTML = html;
+}
+
+function createAppCard(app, platform, appType) {
+    const uniqueId = `${platform}-${appType}-${app}`;
+    return `
         <div class="app-config-card">
             <div class="app-config-header">
-                <input type="checkbox" class="app-checkbox" data-app="${app}" 
+                <input type="checkbox" class="app-checkbox" data-app="${app}" data-platform="${platform}" data-type="${appType}"
                        onchange="toggleApp(this, '${app}')">
                 <div class="app-name">${app}</div>
             </div>
             <div class="app-config-fields">
                 <div class="form-field">
-                    <label for="${app}-version">Version *</label>
-                    <input type="text" id="${app}-version" name="${app}-version" 
+                    <label for="${uniqueId}-version">Version *</label>
+                    <input type="text" id="${uniqueId}-version" name="${uniqueId}-version" 
                            placeholder="ex: 1.2.3" required disabled
                            onchange="updateSelectedApps()">
                     <span class="field-hint">Version de l'application</span>
                 </div>
                 <div class="form-field">
-                    <label for="${app}-archive">Chemin de l'archive (optionnel)</label>
-                    <input type="text" id="${app}-archive" name="${app}-archive" 
+                    <label for="${uniqueId}-archive">Chemin de l'archive (optionnel)</label>
+                    <input type="text" id="${uniqueId}-archive" name="${uniqueId}-archive" 
                            placeholder="ex: /home/user/app.tar.gz" disabled
                            onchange="updateSelectedApps()">
                     <span class="field-hint">Chemin complet vers l'archive</span>
                 </div>
             </div>
         </div>
-    `).join('');
+    `;
 }
 
 function prepareSummaryStep() {
     const summaryContainer = document.getElementById('summaryContainer');
     
     let platformInfo = '';
-    if (wizardState.community === 'fr') {
+    if (wizardState.community === 'fr' && wizardState.platforms.length > 0) {
         platformInfo = `
             <div class="summary-section">
-                <div class="summary-label">Plateforme</div>
-                <div class="summary-value">${wizardState.platform.toUpperCase()}</div>
+                <div class="summary-label">Plateformes</div>
+                <div class="summary-value">${wizardState.platforms.map(p => p.toUpperCase()).join(', ')}</div>
             </div>
         `;
     }
@@ -314,6 +371,7 @@ function prepareSummaryStep() {
     const appsHtml = wizardState.selectedApps.map(app => `
         <div class="summary-app">
             <div class="summary-app-name">${app.name}</div>
+            <div class="summary-app-badge">${app.platform.toUpperCase()} - ${app.type.toUpperCase()}</div>
             <div class="summary-app-details">
                 <div class="summary-app-detail">
                     <strong>Version:</strong>
@@ -332,12 +390,12 @@ function prepareSummaryStep() {
     summaryContainer.innerHTML = `
         <div class="summary-section">
             <div class="summary-label">Communauté</div>
-            <div class="summary-value">${wizardState.community === 'fr' ? 'France' : 'Belgique'}</div>
+            <div class="summary-value">${wizardState.community.toUpperCase()}</div>
         </div>
         ${platformInfo}
         <div class="summary-section">
-            <div class="summary-label">Type d'application</div>
-            <div class="summary-value">${wizardState.appType.toUpperCase()}</div>
+            <div class="summary-label">Types d'application</div>
+            <div class="summary-value">${wizardState.appTypes.map(t => t.toUpperCase()).join(', ')}</div>
         </div>
         <div class="summary-section">
             <div class="summary-label">Applications sélectionnées (${wizardState.selectedApps.length})</div>
@@ -356,8 +414,7 @@ function prepareFormSubmission() {
     hiddenSelections.innerHTML = '';
     
     wizardState.selectedApps.forEach((app, index) => {
-        const platform = wizardState.platform || '';
-        const value = `${platform}|${wizardState.appType}|${app.name}|${app.version}:${app.archive || ''}`;
+        const value = `${app.platform}|${app.type}|${app.name}|${app.version}:${app.archive || ''}`;
         
         const input = document.createElement('input');
         input.type = 'hidden';

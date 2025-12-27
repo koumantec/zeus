@@ -69,15 +69,13 @@
                         <h2 class="step-title">Sélectionnez votre communauté</h2>
                         <p class="step-description">Choisissez la communauté pour laquelle vous souhaitez configurer la stack</p>
                         
-                        <div class="choice-grid">
-                            <div class="choice-card" data-value="fr" onclick="selectCommunity('fr')">
-                                <div class="choice-icon">🇫🇷</div>
-                                <div class="choice-title">France</div>
+                        <div class="choice-grid choice-grid-compact">
+                            <div class="choice-card choice-card-compact" data-value="fr" onclick="selectCommunity('fr')">
+                                <div class="choice-title">FR</div>
                                 <div class="choice-description">Configuration pour la communauté française</div>
                             </div>
-                            <div class="choice-card" data-value="be" onclick="selectCommunity('be')">
-                                <div class="choice-icon">🇧🇪</div>
-                                <div class="choice-title">Belgique</div>
+                            <div class="choice-card choice-card-compact" data-value="be" onclick="selectCommunity('be')">
+                                <div class="choice-title">BE</div>
                                 <div class="choice-description">Configuration pour la communauté belge</div>
                             </div>
                         </div>
@@ -87,8 +85,8 @@
                 <!-- Step 2: Platform Selection (FR only) -->
                 <div class="wizard-step" id="step-2">
                     <div class="step-content">
-                        <h2 class="step-title">Sélectionnez la plateforme</h2>
-                        <p class="step-description">Choisissez la plateforme applicative</p>
+                        <h2 class="step-title">Sélectionnez les plateformes</h2>
+                        <p class="step-description">Vous pouvez sélectionner une ou plusieurs plateformes</p>
                         
                         <div class="choice-grid" id="platformChoices">
                             <!-- Dynamically populated -->
@@ -99,8 +97,8 @@
                 <!-- Step 3: Application Type Selection -->
                 <div class="wizard-step" id="step-3">
                     <div class="step-content">
-                        <h2 class="step-title">Sélectionnez le type d'application</h2>
-                        <p class="step-description">Choisissez le type d'application à déployer</p>
+                        <h2 class="step-title">Sélectionnez les types d'application</h2>
+                        <p class="step-description">Vous pouvez sélectionner un ou plusieurs types d'application</p>
                         
                         <div class="choice-grid" id="typeChoices">
                             <!-- Dynamically populated -->
@@ -112,7 +110,7 @@
                 <div class="wizard-step" id="step-4">
                     <div class="step-content">
                         <h2 class="step-title">Configurez vos applications</h2>
-                        <p class="step-description">Sélectionnez les applications et renseignez leurs détails</p>
+                        <p class="step-description">Vous pouvez sélectionner une ou plusieurs applications et renseigner leurs détails</p>
                         
                         <div class="applications-list" id="applicationsList">
                             <!-- Dynamically populated -->
