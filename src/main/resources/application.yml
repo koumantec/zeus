@@ -1,0 +1,17 @@
+server:
+  port: 8000
+
+spring:
+  application:
+    name: core-control
+  datasource:
+    driver-class-name: org.sqlite.JDBC
+    url: jdbc:sqlite:./storage/app.db
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+logging:
+  level:
+    root: INFO
+    com.stetits.core: INFO
