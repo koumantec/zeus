@@ -4,3 +4,29 @@ target
 # Settings files (contains sensitive information)
 .core/
 settings.conf
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Database
+storage/*.db
+storage/*.db-journal
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+*.swp
+*.swo
+*~

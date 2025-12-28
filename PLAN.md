@@ -204,9 +204,9 @@
 
 | Phase | Titre                                      | Statut |
 |-------|--------------------------------------------|--------|
-| 0     | Base Projet (Structure + Qualité)         | ⏳     |
-| 1     | Modèles & Validation (Contrats)            | ⏳     |
-| 2     | Persistance & Queue (SQLite)               | ⏳     |
+| 0     | Base Projet (Structure + Qualité)         | ✅     |
+| 1     | Modèles & Validation (Contrats)            | ✅     |
+| 2     | Persistance & Queue (SQLite)               | ✅     |
 | 3     | API Query (READ)                           | ⏳     |
 | 4     | API Command (WRITE) + Machine d'État       | ⏳     |
 | 5     | Worker d'Exécution (Sans Docker)           | ⏳     |
