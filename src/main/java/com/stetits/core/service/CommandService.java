@@ -15,10 +15,10 @@ public class CommandService {
     private final CommandsRepository commandsRepository;
     private final ObjectMapper objectMapper;
 
-    public CommandService(StacksRepository stacksRepository, CommandsRepository commandsRepository, ObjectMapper objectMapper) {
+    public CommandService(StacksRepository stacksRepository, CommandsRepository commandsRepository) {
         this.stacksRepository = stacksRepository;
         this.commandsRepository = commandsRepository;
-        this.objectMapper = objectMapper;
+        this.objectMapper = new ObjectMapper();
     }
 
     public long enqueueApply(String stackId, String version) {
