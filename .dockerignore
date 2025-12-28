@@ -7,3 +7,6 @@ target/
 *.log
 .DS_Store
 node_modules/
+target
+.idea
+storage

@@ -1,0 +1,18 @@
+services:
+  core-control:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: core-control
+    ports:
+      - "8000:8000"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: "-XX:MaxRAMPercentage=50 -XX:InitialRAMPercentage=10 -Dfile.encoding=UTF-8"
+    volumes:
+      - db_storage:/app/storage
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+volumes:
+  db_storage:
