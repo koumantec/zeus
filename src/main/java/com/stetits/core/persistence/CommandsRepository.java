@@ -1,8 +1,6 @@
 package com.stetits.core.persistence;
 
 import com.stetits.core.domain.dto.CommandDto;
-import org.springframework.stereotype.Repository;
-
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Repository;
@@ -77,13 +75,9 @@ public class CommandsRepository {
     /**
      * Claim atomique de la prochaine commande PENDING.
      * IMPORTANT: @Transactional assure que tout se passe sur la même connexion.
-     * On utilise BEGIN IMMEDIATE pour verrouiller l'écriture et éviter les races.
      */
     @Transactional
     public Optional<Long> claimNextPending() {
-        // Verrou d'écriture (SQLite)
-        jdbc.execute("BEGIN IMMEDIATE");
-
         SqlRowSet next = jdbc.queryForRowSet("SELECT id FROM commands WHERE status='PENDING' ORDER BY id ASC LIMIT 1");
         if (!next.next()) {
             return Optional.empty();
