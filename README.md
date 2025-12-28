@@ -1,278 +1,250 @@
-1. Objectif
+# Core Monitor - Orchestrateur de Stacks Docker
+
+## 1. Objectif
 
 Construire une application web containerisée permettant à un utilisateur :
 
-de composer une stack applicative via un wizard (choix guidés et cohérents),
+- **Composer une stack applicative** via un wizard (choix guidés et cohérents)
+- **Versionner chaque modification** de stack (historique complet)
+- **Revenir en arrière** (rollback) en sélectionnant une version précédente
+- **Appliquer une stack sur un hôte Docker** (création / mise à jour) en créant une constellation de containers
+- **Monitorer l'état** des containers et de la stack
+- **Exécuter des actions runtime** (start/stop/restart/delete, déploiement applicatif dans middleware)
+- **Via une IHM et une API REST** couvrant toutes les fonctionnalités
 
-de versionner chaque modification de stack (historique complet),
+L'application elle-même s'exécute dans un container Docker et pilote d'autres containers sur le même hôte via l'API Docker.
 
-de revenir en arrière (rollback) en sélectionnant une version précédente,
+---
 
-d’appliquer une stack sur un hôte Docker (création / mise à jour) en créant une constellation de containers,
+## 2. Principes d'Architecture
 
-de monitorer l’état des containers et de la stack,
+### 2.1 Commandes vs Requêtes (CQRS pragmatique)
 
-d’exécuter des actions runtime (start/stop/restart/delete, déploiement applicatif dans middleware),
+Deux catégories d'appels au backend :
 
-via une IHM et une API REST couvrant toutes les fonctionnalités.
+#### **Queries (READ)**
+- Ne modifient pas l'état du système (statut stack, liste versions, état commandes, monitoring containers…)
+- ✅ Exécutées immédiatement, sans ordonnancement strict
 
-L’application elle-même s’exécute dans un container Docker et pilote d’autres containers sur le même hôte via l’API Docker.
+#### **Commands (WRITE)**
+- Susceptibles de modifier l'état (create/update/apply/deploy/delete/rollback…)
+- ✅ Persistées, ordonnées strictement, exécutées séquentiellement via un worker
 
+**Règle :** Une commande WRITE ne démarre que si toutes les commandes WRITE précédentes sont `DONE` ou `CANCELLED`.
 
+---
 
-2. Principes d’architecture
+### 2.2 Versioning Immuable des Stacks
 
-2.1 Commandes vs Requêtes (CQRS pragmatique)
+- Une **Stack** est l'entité logique durable (identité)
+- Une **StackVersion** est un snapshot immuable de la définition déclarative de la stack à un instant donné
+- Toute modification de stack crée une nouvelle `StackVersion` (jamais de modification "in place")
+- Le rollback consiste à sélectionner une version existante et à déclencher une commande de convergence
 
-Deux catégories d’appels au backend :
-
-Queries (READ) : ne modifient pas l’état du système (statut stack, liste versions, état commandes, monitoring containers…).
-✅ exécutées immédiatement, sans ordonnancement strict.
-
-Commands (WRITE) : susceptibles de modifier l’état (create/update/apply/deploy/delete/rollback…).
-✅ persistées, ordonnées strictement, exécutées séquentiellement via un worker.
-
-Règle : une commande WRITE ne démarre que si toutes les commandes WRITE précédentes sont DONE ou CANCELLED.
-
-2.2 Versioning immuable des stacks
-
-Une Stack est l’entité logique durable (identité).
-
-Une StackVersion est un snapshot immuable de la définition déclarative de la stack à un instant donné.
-
-Toute modification de stack crée une nouvelle StackVersion (jamais de modification “in place”).
-
-Le rollback consiste à sélectionner une version existante et à déclencher une commande de convergence.
-
-Analogie :
-
-Stack = dépôt Git
-
+**Analogie :**
+```
+Stack        = dépôt Git
 StackVersion = commit Git
+```
 
+---
 
-2.3 Définition “compose-like” (déclaratif)
+### 2.3 Définition "Compose-like" (Déclaratif)
 
-Chaque StackVersion embarque une définition compatible docker-compose (langage déclaratif familier), utilisée comme “source of truth”.
+- Chaque `StackVersion` embarque une définition compatible **docker-compose** (langage déclaratif familier)
+- Utilisée comme **"source of truth"**
+- L'orchestrateur effectue ensuite une convergence vers l'état désiré, via l'API Docker (SDK), sans dépendre du CLI `docker compose`
 
-L’orchestrateur effectue ensuite une convergence vers l’état désiré, via l’API Docker (SDK), sans dépendre du CLI docker compose.
+---
 
+### 2.4 Orchestration Fiable par Queue Mono-partition Persistée
 
-2.4 Orchestration fiable par queue mono-partition persistée
+- Les **commands WRITE** sont stockées dans une queue persistée (mono-partition)
+- Un **worker** consomme la queue et exécute une commande à la fois, dans l'ordre
+- Les **queries READ** ne passent pas par la queue
 
-Les commands WRITE sont stockées dans une queue persistée (mono-partition).
+**Objectifs :**
+- ✅ Ordonnancement strict
+- ✅ Reprise après crash (durabilité)
+- ✅ Audit / traçabilité (historique complet)
 
-Un worker consomme la queue et exécute une commande à la fois, dans l’ordre.
+---
 
-Les queries READ ne passent pas par la queue.
+### 2.5 Convergence Idempotente
 
-Objectifs :
+L'exécution d'une `StackVersion` suit une logique de réconciliation :
 
-Ordonnancement strict
+1. Créer/vérifier networks et volumes
+2. Créer les containers (stopped)
+3. Démarrer selon dépendances (`depends_on`, healthchecks)
+4. Enregistrer les identifiants runtime
+5. Mettre à jour le statut
 
-Reprise après crash (durabilité)
+**Cette approche permet :**
+- Relances sans effets de bord
+- Tolérance aux pannes
+- Rollback reproductible
 
-Audit / traçabilité (historique complet)
+---
 
-2.5 Convergence idempotente
+## 3. Architecture Logique
 
-L’exécution d’une StackVersion suit une logique de réconciliation :
+### 3.1 Composants
 
-Créer/vérifier networks et volumes
+#### **Frontend (IHM)**
+- Wizard (construction de stack)
+- Dashboard (stacks, versions, commandes)
+- Monitoring et actions runtime
+- Utilise exclusivement l'API REST
 
-Créer les containers (stopped)
+#### **Backend (Orchestrateur)**
+- API Query (READ)
+- API Command (WRITE → enqueue)
+- Services de validation, versioning
+- Worker d'exécution (queue)
+- Intégration Docker SDK
+- Persistance : stacks, versions, commandes, logs
 
-Démarrer selon dépendances (depends_on, healthchecks)
+#### **Docker Engine (host)**
+- Exécute les containers de stacks
+- Exécute aussi le container "orchestrator"
 
-Enregistrer les identifiants runtime
+---
 
-Mettre à jour le statut
+### 3.2 Diagramme (simplifié)
 
-Cette approche permet :
-
-relances sans effets de bord,
-
-tolérance aux pannes,
-
-rollback reproductible.
-
-3. Architecture logique
-   3.1 Composants
-
-Frontend (IHM)
-
-Wizard (construction de stack)
-
-Dashboard (stacks, versions, commandes)
-
-Monitoring et actions runtime
-
-Utilise exclusivement l’API REST
-
-Backend (Orchestrateur)
-
-API Query (READ)
-
-API Command (WRITE → enqueue)
-
-Services de validation, versioning
-
-Worker d’exécution (queue)
-
-Intégration Docker SDK
-
-Persistance : stacks, versions, commandes, logs
-
-Docker Engine (host)
-
-Exécute les containers de stacks
-
-Exécute aussi le container “orchestrator”
-
-
-3.2 Diagramme (simplifié)
-
+```
 Frontend ──REST──> Backend
-|                 |
-| Queries (READ)  | Commands (WRITE)
-|                 v
-|           Command Queue (DB)
-|                 |
-|               Worker
-|                 |
-└───────< Docker SDK / Docker API >─────── Docker Engine ──> Containers
+    |                 |
+    | Queries (READ)  | Commands (WRITE)
+    |                 v
+    |           Command Queue (DB)
+    |                 |
+    |               Worker
+    |                 |
+    └───────< Docker SDK / Docker API >─────── Docker Engine ──> Containers
+```
 
-4. Modèle de domaine
-   4.1 Stack (identité)
+---
 
-stack_id
+## 4. Modèle de Domaine
 
-name
+### 4.1 Stack (identité)
 
-current_version (pointe vers la version active)
+| Champ            | Description                          |
+|------------------|--------------------------------------|
+| `stack_id`       | Identifiant unique                   |
+| `name`           | Nom de la stack                      |
+| `current_version`| Pointe vers la version active        |
 
-4.2 StackVersion (snapshot immuable)
+---
 
-stack_id
+### 4.2 StackVersion (snapshot immuable)
 
-version (ex: v1, v2…)
+| Champ            | Description                                    |
+|------------------|------------------------------------------------|
+| `stack_id`       | Référence à la stack parente                   |
+| `version`        | Numéro de version (ex: v1, v2…)                |
+| `parent_version` | Version précédente                             |
+| `metadata`       | Auteur, date, commentaire                      |
+| `compose`        | Définition compose-like                        |
+| `runtime`        | Mapping vers IDs Docker (généré)               |
+| `status`         | desired/actual/last_updated                    |
 
-parent_version
+---
 
-metadata (auteur, date, commentaire)
+### 4.3 Command (write)
 
-compose (définition compose-like)
+| Champ        | Description                                              |
+|--------------|----------------------------------------------------------|
+| `command_id` | Identifiant unique                                       |
+| `stack_id`   | Stack concernée                                          |
+| `type`       | Type de commande                                         |
+| `payload`    | Données de la commande                                   |
+| `status`     | `PENDING` \| `RUNNING` \| `DONE` \| `FAILED` \| `CANCELLED` |
+| `timestamps` | Horodatage + logs                                        |
 
-runtime (mapping vers IDs Docker, généré)
+---
 
-status (desired/actual/last_updated)
+## 5. Choix d'Implémentation (Proposés)
 
-4.3 Command (write)
+### 5.1 Backend
 
-command_id
+- **Python + FastAPI** : API robuste, validation Pydantic, vitesse de dev
+- **Pydantic** : Contrats stricts pour StackVersion/Command
+- **Docker SDK (docker-py)** : Pilotage natif du runtime Docker
+- **SQLite** au départ : Queue + persistance simples, migrable vers Postgres
+- Le backend tourne dans un container et accède à Docker via le socket `/var/run/docker.sock` (ou API TLS ultérieurement)
 
-stack_id
+---
 
-type
+### 5.2 Frontend
 
-payload
+- **SPA** (React/Vue/Angular) — choix à finaliser ensuite
+- Consomme uniquement l'API REST
 
-status: PENDING|RUNNING|DONE|FAILED|CANCELLED
+---
 
-timestamps + logs
+### 5.3 Format des Définitions
 
-5. Choix d’implémentation (proposés)
-   5.1 Backend
+- **YAML** (lisible, proche docker-compose)
+- **JSON** possible côté API si besoin (conversion simple)
 
-Python + FastAPI : API robuste, validation Pydantic, vitesse de dev.
+---
 
-Pydantic : contrats stricts pour StackVersion/Command.
+## 6. Sécurité (Principes)
 
-Docker SDK (docker-py) : pilotage natif du runtime Docker.
+L'accès au socket Docker donne des privilèges élevés → **limiter l'exposition** :
 
-SQLite au départ : queue + persistance simples, migrable vers Postgres.
+- ✅ Orchestrateur sur réseau privé
+- ✅ Authentification/autorisation
+- ✅ RBAC (phase ultérieure)
+- ✅ Journalisation complète des actions
 
-Le backend tourne dans un container et accède à Docker via le socket /var/run/docker.sock (ou API TLS ultérieurement).
+**À moyen terme :** Préférer Docker API TLS ou délégation via un agent.
 
-5.2 Frontend
+---
 
-SPA (React/Vue/Angular) — choix à finaliser ensuite.
+## 7. API (Esquisse)
 
-Consomme uniquement l’API REST.
+### Queries (READ)
 
-5.3 Format des définitions
-
-YAML (lisible, proche docker-compose)
-
-JSON possible côté API si besoin (conversion simple)
-
-6. Sécurité (principes)
-
-L’accès au socket Docker donne des privilèges élevés → limiter l’exposition :
-
-orchestrateur sur réseau privé,
-
-authentification/autorisation,
-
-RBAC (phase ultérieure),
-
-journalisation complète des actions.
-
-À moyen terme : préférer Docker API TLS ou délégation via un agent.
-
-7. API (esquisse)
-   Queries (READ)
-
-GET /stacks
-
-GET /stacks/{id}
-
-GET /stacks/{id}/versions
-
-GET /stacks/{id}/versions/{version}
-
-GET /stacks/{id}/status
-
-GET /stacks/{id}/containers
-
-GET /commands/{id}
-
-GET /commands?stack_id=...
-
-Commands (WRITE)
-
-POST /stacks (crée Stack + version initiale)
-
-POST /stacks/{id}/versions (crée une nouvelle StackVersion)
-
-POST /stacks/{id}/apply/{version} (enqueue APPLY)
-
-POST /stacks/{id}/rollback/{version} (enqueue ROLLBACK)
-
-POST /stacks/{id}/deploy (enqueue DEPLOY)
-
-POST /stacks/{id}/delete (enqueue DELETE)
-
-POST /commands/{id}/cancel (annulation si possible)
-
-8. Bonnes pratiques intégrées
-
-Contrats stricts (Pydantic)
-
-Séparation READ/WRITE (CQRS)
-
-Immutabilité des versions
-
-Queue persistée + worker séquentiel
-
-Idempotence (convergence)
-
-Logs structurés et auditables
-
-Tests : unitaires, API, intégration Docker
-
-CI/CD dès le début
-
-Feature flags / versions API si nécessaire
-
-Convention labels Docker pour traçabilité
+| Méthode | Endpoint                                | Description                          |
+|---------|-----------------------------------------|--------------------------------------|
+| `GET`   | `/stacks`                               | Liste toutes les stacks              |
+| `GET`   | `/stacks/{id}`                          | Détails d'une stack                  |
+| `GET`   | `/stacks/{id}/versions`                 | Liste des versions d'une stack       |
+| `GET`   | `/stacks/{id}/versions/{version}`       | Détails d'une version                |
+| `GET`   | `/stacks/{id}/status`                   | Statut actuel de la stack            |
+| `GET`   | `/stacks/{id}/containers`               | Liste des containers de la stack     |
+| `GET`   | `/commands/{id}`                        | Détails d'une commande               |
+| `GET`   | `/commands?stack_id=...`                | Liste des commandes (filtrées)       |
+
+---
+
+### Commands (WRITE)
+
+| Méthode | Endpoint                                | Description                                    |
+|---------|-----------------------------------------|------------------------------------------------|
+| `POST`  | `/stacks`                               | Crée Stack + version initiale                  |
+| `POST`  | `/stacks/{id}/versions`                 | Crée une nouvelle StackVersion                 |
+| `POST`  | `/stacks/{id}/apply/{version}`          | Enqueue APPLY                                  |
+| `POST`  | `/stacks/{id}/rollback/{version}`       | Enqueue ROLLBACK                               |
+| `POST`  | `/stacks/{id}/deploy`                   | Enqueue DEPLOY                                 |
+| `POST`  | `/stacks/{id}/delete`                   | Enqueue DELETE                                 |
+| `POST`  | `/commands/{id}/cancel`                 | Annulation si possible                         |
+
+---
+
+## 8. Bonnes Pratiques Intégrées
+
+- ✅ **Contrats stricts** (Pydantic)
+- ✅ **Séparation READ/WRITE** (CQRS)
+- ✅ **Immutabilité des versions**
+- ✅ **Queue persistée + worker séquentiel**
+- ✅ **Idempotence** (convergence)
+- ✅ **Logs structurés et auditables**
+- ✅ **Tests** : unitaires, API, intégration Docker
+- ✅ **CI/CD** dès le début
+- ✅ **Feature flags / versions API** si nécessaire
+- ✅ **Convention labels Docker** pour traçabilité
