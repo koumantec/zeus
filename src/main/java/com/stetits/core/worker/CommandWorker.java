@@ -4,20 +4,22 @@ import com.stetits.core.persistence.CommandLogsRepository;
 import com.stetits.core.persistence.CommandsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
+@ConditionalOnProperty(prefix = "orchestrator.worker", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class CommandWorker implements SmartLifecycle {
-
     private static final Logger log = LoggerFactory.getLogger(CommandWorker.class);
-
+    @Value("${orchestrator.worker.autostart:true}")
+    boolean autoStart;
     private final CommandsRepository commandsRepository;
     private final CommandLogsRepository commandLogsRepository;
     private final CommandExecutionService executor;
@@ -96,5 +98,9 @@ public class CommandWorker implements SmartLifecycle {
 
     @Override public boolean isRunning() { return running.get(); }
     @Override public void stop(Runnable callback) { stop(); callback.run(); }
+    @Override
+    public boolean isAutoStartup() {
+        return autoStart;
+    }
     @Override public int getPhase() { return 0; }
 }
