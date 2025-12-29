@@ -1,6 +1,7 @@
-package com.stetits.core.persistence;
+package com.stetits.core.repository;
 
 import com.stetits.core.domain.dto.CommandDto;
+import com.stetits.core.domain.dto.CommandRow;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Repository;
@@ -112,6 +113,21 @@ public class CommandsRepository {
                 parseInstant(rs.getString("ended_at")),
                 rs.getString("error_message")
         );
+    }
+
+    public Optional<CommandRow> getRow(long id) {
+        var rows = jdbc.query(
+                "SELECT id, stack_id, type, payload_json, status FROM commands WHERE id=?",
+                (rs, i) -> new CommandRow(
+                        rs.getLong("id"),
+                        rs.getString("stack_id"),
+                        rs.getString("type"),
+                        rs.getString("payload_json"),
+                        rs.getString("status")
+                ),
+                id
+        );
+        return rows.stream().findFirst();
     }
 
     private static Instant parseInstant(String s) {

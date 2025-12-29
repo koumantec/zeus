@@ -2,8 +2,8 @@ package com.stetits.core.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.stetits.core.persistence.CommandsRepository;
-import com.stetits.core.persistence.StacksRepository;
+import com.stetits.core.repository.CommandsRepository;
+import com.stetits.core.repository.StacksRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;

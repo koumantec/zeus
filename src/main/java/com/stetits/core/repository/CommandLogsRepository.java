@@ -1,9 +1,11 @@
-package com.stetits.core.persistence;
+package com.stetits.core.repository;
 
+import com.stetits.core.domain.dto.CommandLogRow;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.List;
 
 @Repository
 public class CommandLogsRepository {
@@ -21,6 +23,14 @@ public class CommandLogsRepository {
                 Instant.now().toString(),
                 level,
                 message
+        );
+    }
+
+    public List<CommandLogRow> list(long commandId, int limit) {
+        return jdbc.query(
+                "SELECT ts, level, message FROM command_logs WHERE command_id=? ORDER BY id DESC LIMIT ?",
+                (rs, i) -> new CommandLogRow(rs.getString("ts"), rs.getString("level"), rs.getString("message")),
+                commandId, limit
         );
     }
 }

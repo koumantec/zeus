@@ -1,12 +1,14 @@
 package com.stetits.core.worker;
 
-import com.stetits.core.persistence.CommandLogsRepository;
-import com.stetits.core.persistence.CommandsRepository;
+import com.stetits.core.repository.CommandLogsRepository;
+import com.stetits.core.repository.CommandsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -18,21 +20,23 @@ public class CommandWorker implements SmartLifecycle {
 
     private final CommandsRepository commandsRepository;
     private final CommandLogsRepository commandLogsRepository;
+    private final CommandExecutionService executor;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
-    private Thread workerThread;
+    private Thread thread;
 
-    public CommandWorker(CommandsRepository commandsRepository, CommandLogsRepository commandLogsRepository) {
+    public CommandWorker(CommandsRepository commandsRepository, CommandLogsRepository commandLogsRepository, CommandExecutionService executor) {
         this.commandsRepository = commandsRepository;
         this.commandLogsRepository = commandLogsRepository;
+        this.executor = executor;
     }
 
     @Override
     public void start() {
         if (running.compareAndSet(false, true)) {
-            workerThread = new Thread(this::loop, "command-worker");
-            workerThread.setDaemon(true);
-            workerThread.start();
+            thread = new Thread(this::loop, "command-worker");
+            thread.setDaemon(true);
+            thread.start();
             log.info("Command worker started");
         }
     }
@@ -46,22 +50,24 @@ public class CommandWorker implements SmartLifecycle {
                     continue;
                 }
 
-                long commandId = claimed.get();
-                commandLogsRepository.append(commandId, "INFO", "Command claimed and starting execution");
+                long cmdId = claimed.get();
+                commandLogsRepository.append(cmdId, "INFO", "Claimed command; entering execution");
 
-                // ---- STUB EXECUTION ----
-                // Ici, phase suivante: switch type -> orchestration docker
-                TimeUnit.SECONDS.sleep(10); // simule traitement
-
-                commandsRepository.markDone(commandId);
-                commandLogsRepository.append(commandId, "INFO", "Command completed successfully");
+                try {
+                    executor.execute(cmdId);
+                    commandsRepository.markDone(cmdId);
+                    commandLogsRepository.append(cmdId, "INFO", "Command marked DONE");
+                } catch (Exception e) {
+                    String msg = e.getMessage() == null ? e.getClass().getName() : e.getMessage();
+                    commandsRepository.markFailed(cmdId, msg);
+                    commandLogsRepository.append(cmdId, "ERROR", "Command marked FAILED: " + msg);
+                    commandLogsRepository.append(cmdId, "ERROR", "Stacktrace:\n" + stacktrace(e, 8000));
+                }
 
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 return;
             } catch (Exception e) {
-                // On ne sait pas forcément quel commandId était en cours si exception avant claim,
-                // mais si l'exception survient après claim, on peut enrichir en lisant le dernier RUNNING (option).
                 log.error("Worker loop error", e);
                 try {
                     TimeUnit.MILLISECONDS.sleep(500);
@@ -73,28 +79,21 @@ public class CommandWorker implements SmartLifecycle {
         }
     }
 
+    private static String stacktrace(Throwable t, int maxChars) {
+        StringWriter sw = new StringWriter();
+        t.printStackTrace(new PrintWriter(sw));
+        String s = sw.toString();
+        return s.length() <= maxChars ? s : s.substring(0, maxChars) + "\n...truncated...";
+    }
+
     @Override
     public void stop() {
         running.set(false);
-        if (workerThread != null) {
-            workerThread.interrupt();
-        }
+        if (thread != null) thread.interrupt();
         log.info("Command worker stopped");
     }
 
-    @Override
-    public boolean isRunning() {
-        return running.get();
-    }
-
-    @Override
-    public int getPhase() {
-        return 0;
-    }
-
-    @Override
-    public void stop(Runnable callback) {
-        stop();
-        callback.run();
-    }
+    @Override public boolean isRunning() { return running.get(); }
+    @Override public void stop(Runnable callback) { stop(); callback.run(); }
+    @Override public int getPhase() { return 0; }
 }
