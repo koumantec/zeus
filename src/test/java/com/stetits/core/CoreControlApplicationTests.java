@@ -10,7 +10,6 @@ import org.springframework.test.context.DynamicPropertySource;
 @SpringBootTest
 class CoreControlApplicationTests {
 
-
 	static String dbPath;
 
 	@DynamicPropertySource
