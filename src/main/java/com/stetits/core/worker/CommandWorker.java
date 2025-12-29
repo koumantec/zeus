@@ -1,7 +1,7 @@
 package com.stetits.core.worker;
 
-import com.stetits.core.repository.CommandLogsRepository;
-import com.stetits.core.repository.CommandsRepository;
+import com.stetits.core.persistence.CommandLogsRepository;
+import com.stetits.core.persistence.CommandsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.SmartLifecycle;
@@ -44,26 +44,7 @@ public class CommandWorker implements SmartLifecycle {
     private void loop() {
         while (running.get()) {
             try {
-                Optional<Long> claimed = commandsRepository.claimNextPending();
-                if (claimed.isEmpty()) {
-                    TimeUnit.MILLISECONDS.sleep(250);
-                    continue;
-                }
-
-                long cmdId = claimed.get();
-                commandLogsRepository.append(cmdId, "INFO", "Claimed command; entering execution");
-
-                try {
-                    executor.execute(cmdId);
-                    commandsRepository.markDone(cmdId);
-                    commandLogsRepository.append(cmdId, "INFO", "Command marked DONE");
-                } catch (Exception e) {
-                    String msg = e.getMessage() == null ? e.getClass().getName() : e.getMessage();
-                    commandsRepository.markFailed(cmdId, msg);
-                    commandLogsRepository.append(cmdId, "ERROR", "Command marked FAILED: " + msg);
-                    commandLogsRepository.append(cmdId, "ERROR", "Stacktrace:\n" + stacktrace(e, 8000));
-                }
-
+                if (!processOne()) TimeUnit.MILLISECONDS.sleep(250);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 return;
@@ -77,6 +58,26 @@ public class CommandWorker implements SmartLifecycle {
                 }
             }
         }
+    }
+
+    // Dans CommandWorker
+    public boolean processOne() throws InterruptedException {
+        var claimed = commandsRepository.claimNextPending();
+        if (claimed.isEmpty()) return false;
+
+        long cmdId = claimed.get();
+        commandLogsRepository.append(cmdId, "INFO", "Claimed command; entering execution");
+
+        try {
+            executor.execute(cmdId);
+            commandsRepository.markDone(cmdId);
+            commandLogsRepository.append(cmdId, "INFO", "Command marked DONE");
+        } catch (Exception e) {
+            String msg = e.getMessage() == null ? e.getClass().getName() : e.getMessage();
+            commandsRepository.markFailed(cmdId, msg);
+            commandLogsRepository.append(cmdId, "ERROR", "Command marked FAILED: " + msg);
+        }
+        return true;
     }
 
     private static String stacktrace(Throwable t, int maxChars) {

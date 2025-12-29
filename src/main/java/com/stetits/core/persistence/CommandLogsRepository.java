@@ -1,4 +1,4 @@
-package com.stetits.core.repository;
+package com.stetits.core.persistence;
 
 import com.stetits.core.domain.dto.CommandLogRow;
 import org.springframework.jdbc.core.JdbcTemplate;

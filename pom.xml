@@ -6,7 +6,7 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>4.0.1</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/> <!-- lookup parent from persistence -->
 	</parent>
 	<groupId>com.stetits.core</groupId>
 	<artifactId>core-control</artifactId>
@@ -14,7 +14,7 @@
 	<name>core-control</name>
 	<description>Core on Docker Orchestrator</description>
 	<properties>
-		<java.version>25</java.version>
+		<java.version>21</java.version>
 	</properties>
 	<dependencies>
 		<!-- REST -->

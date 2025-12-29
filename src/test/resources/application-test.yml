@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    driver-class-name: org.sqlite.JDBC
+    url: jdbc:sqlite:./target/test-app.db
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+logging:
+  level:
+    root: WARN

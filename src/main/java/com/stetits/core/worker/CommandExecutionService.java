@@ -2,8 +2,8 @@ package com.stetits.core.worker;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.stetits.core.repository.CommandLogsRepository;
-import com.stetits.core.repository.CommandsRepository;
+import com.stetits.core.persistence.CommandLogsRepository;
+import com.stetits.core.persistence.CommandsRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

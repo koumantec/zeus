@@ -1,7 +1,7 @@
 package com.stetits.core.worker;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.stetits.core.repository.CommandLogsRepository;
+import com.stetits.core.persistence.CommandLogsRepository;
 
 public class CommandContext {
     private final long commandId;

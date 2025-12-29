@@ -1,6 +1,6 @@
 package com.stetits.core.api.query;
 
-import com.stetits.core.repository.CommandLogsRepository;
+import com.stetits.core.persistence.CommandLogsRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

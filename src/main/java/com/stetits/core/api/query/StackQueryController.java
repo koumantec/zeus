@@ -1,7 +1,7 @@
 package com.stetits.core.api.query;
 
-import com.stetits.core.repository.StackVersionsRepository;
-import com.stetits.core.repository.StacksRepository;
+import com.stetits.core.persistence.StackVersionsRepository;
+import com.stetits.core.persistence.StacksRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
