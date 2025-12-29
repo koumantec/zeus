@@ -41,6 +41,10 @@ public class CommandService {
         return enqueue(stackId, "DEPLOY_APP", deployPayload);
     }
 
+    public long enqueueStart(String stackId) { ensureStackExists(stackId); return enqueue(stackId, "START_STACK", Map.of()); }
+    public long enqueueStop(String stackId)  { ensureStackExists(stackId); return enqueue(stackId, "STOP_STACK", Map.of()); }
+    public long enqueueRestart(String stackId){ ensureStackExists(stackId); return enqueue(stackId, "RESTART_STACK", Map.of()); }
+
     public boolean cancel(long commandId) {
         return commandsRepository.cancelIfPending(commandId);
     }

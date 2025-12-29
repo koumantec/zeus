@@ -1,7 +1,6 @@
 package com.stetits.core.api.command;
 
 import com.stetits.core.service.CommandService;
-import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,6 +44,24 @@ public class CommandController {
     @PostMapping("/stacks/{stackId}/deploy")
     public ResponseEntity<?> deploy(@PathVariable String stackId, @RequestBody Map<String, Object> payload) {
         long id = commandService.enqueueDeploy(stackId, payload);
+        return ResponseEntity.accepted().body(Map.of("commandId", id, "status", "PENDING"));
+    }
+
+    @PostMapping("/stacks/{stackId}/start")
+    public ResponseEntity<?> start(@PathVariable String stackId) {
+        long id = commandService.enqueueStart(stackId);
+        return ResponseEntity.accepted().body(Map.of("commandId", id, "status", "PENDING"));
+    }
+
+    @PostMapping("/stacks/{stackId}/stop")
+    public ResponseEntity<?> stop(@PathVariable String stackId) {
+        long id = commandService.enqueueStop(stackId);
+        return ResponseEntity.accepted().body(Map.of("commandId", id, "status", "PENDING"));
+    }
+
+    @PostMapping("/stacks/{stackId}/restart")
+    public ResponseEntity<?> restart(@PathVariable String stackId) {
+        long id = commandService.enqueueRestart(stackId);
         return ResponseEntity.accepted().body(Map.of("commandId", id, "status", "PENDING"));
     }
 
