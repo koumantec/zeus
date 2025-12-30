@@ -4,13 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.DockerClient;
 import com.stetits.core.persistence.CommandsRepository;
 import com.stetits.core.worker.CommandWorker;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
@@ -27,13 +28,36 @@ class EndToEndApplyIT {
 
     @Autowired DockerClient docker;
     @Autowired MockMvc mvc;
-    @Autowired ObjectMapper om;
+    ObjectMapper om = new ObjectMapper();
     @Autowired CommandsRepository commands;
     @Autowired CommandWorker worker;
+
+
+    static String dbPath;
+
+    @DynamicPropertySource
+    static void props(DynamicPropertyRegistry registry) throws Exception {
+        dbPath = "target/test-" + java.util.UUID.randomUUID() + ".db";
+        registry.add("spring.datasource.url", () -> "jdbc:sqlite:" + dbPath);
+    }
+
+    @AfterAll
+    static void cleanup() throws Exception {
+        java.nio.file.Files.deleteIfExists(java.nio.file.Path.of(dbPath));
+    }
+
 
     @BeforeEach
     void requireDocker() {
         DockerITSupport.requireDocker(docker);
+    }
+
+    @AfterEach
+    void truncate(@Autowired JdbcTemplate jdbc) {
+        jdbc.update("DELETE FROM command_logs");
+        jdbc.update("DELETE FROM commands");
+        jdbc.update("DELETE FROM stack_versions");
+        jdbc.update("DELETE FROM stacks");
     }
 
     @Test
