@@ -55,9 +55,12 @@ class ApplyHandlerUnitTest {
         Map<String,ContainerInfo> containersByName = new HashMap<>();
         long seq = 1;
 
-        @Override public String ensureNetwork(String name, Map<String, String> labels) {
-            return networks.computeIfAbsent(name, n -> "net-" + n);
+        @Override
+        public NetworkRef ensureNetwork(String name, Map<String, String> labels) {
+            networks.computeIfAbsent(name, n -> "net-" + n);
+            return new NetworkRef(name, networks.get(name));
         }
+
         @Override public Optional<ContainerInfo> findContainerByName(String name) {
             return Optional.ofNullable(containersByName.get(name));
         }
@@ -67,21 +70,36 @@ class ApplyHandlerUnitTest {
             return id;
         }
         @Override public void startContainer(String containerId) { /* no-op */ }
-        @Override public void stopAndRemoveContainer(String containerId) {
-            containersByName.values().removeIf(c -> c.id().equals(containerId));
-        }
+
+        @Override
+        public void stopContainer(String containerId)  { /* no-op */ }
+
+        @Override
+        public void removeContainer(String containerId, boolean force) { /* no-op */ }
+
+        @Override
+        public void restartContainer(String containerId) { /* no-op */ }
+
         @Override public List<ContainerInfo> listByStack(String stackId) {
             return containersByName.values().stream()
                     .filter(c -> stackId.equals(c.labels().get("core.stack_id")))
                     .toList();
         }
+
+        @Override
+        public List<String> containerLogs(String containerId, int tail) {
+            return List.of();
+        }
     }
 
-    static class FakeVersionsRepo extends StackVersionsRepository {
+    static class FakeVersionsRepo implements StackVersionsRepository {
         final String body;
-        FakeVersionsRepo(String body) { super(null);this.body = body; }
+        FakeVersionsRepo(String body) { this.body = body; }
         @Override public Optional<String> getBodyJson(String stackId, String version) { return Optional.of(body); }
         @Override public List<String> listVersions(String stackId) { return List.of("v1"); }
+
+        @Override
+        public void insert(StackVersionRow row) { /* no-op */ }
     }
 
     static class FakeStacksRepo extends StacksRepository {
