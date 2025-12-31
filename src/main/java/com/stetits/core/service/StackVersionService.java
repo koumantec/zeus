@@ -77,7 +77,7 @@ public class StackVersionService {
         return new CreateVersionResponse(stackId, version, parent, sha);
     }
 
-    private static String sha256Hex(String s) throws Exception {
+    public static String sha256Hex(String s) throws Exception {
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         byte[] dig = md.digest(s.getBytes(StandardCharsets.UTF_8));
         return HexFormat.of().formatHex(dig);

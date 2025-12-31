@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS stack_versions (
   version TEXT NOT NULL,
   parent_version TEXT NULL,
   body_json TEXT NOT NULL,
+  body_sha256 TEXT NOT NULL,
   created_at TEXT NOT NULL,
   created_by TEXT NOT NULL,
   comment TEXT NULL,

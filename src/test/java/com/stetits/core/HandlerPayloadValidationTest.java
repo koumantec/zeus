@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @ActiveProfiles("test")
-class HandlerPayloadValidationTest {
+class HandlerPayloadValidationTest extends TestBase {
     record Case(String type, String payloadJson, String expectedLogContains) {}
 
     @Autowired CommandsRepository commands;

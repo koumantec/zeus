@@ -6,12 +6,14 @@ import com.stetits.core.worker.CommandExecutionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@Import(TestDockerConfig.class)
 class CommandExecutionServiceTest extends TestBase {
 
     @Autowired CommandsRepository commandsRepository;
@@ -42,6 +44,7 @@ class CommandExecutionServiceTest extends TestBase {
 
         var l = logs.list(id, 50);
         assertThat(l).isNotEmpty();
-        assertThat(l.stream().anyMatch(x -> x.message().contains("Stub APPLY"))).isTrue();
+        // Vérifier qu'il y a des logs (le handler ApplyStackVersionHandler écrit des logs)
+        assertThat(l.stream().anyMatch(x -> x.message().contains("Network ensured") || x.message().contains("Service start order"))).isTrue();
     }
 }

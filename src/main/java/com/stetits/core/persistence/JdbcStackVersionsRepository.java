@@ -3,6 +3,7 @@ package com.stetits.core.persistence;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,10 +38,10 @@ public class JdbcStackVersionsRepository implements StackVersionsRepository {
     @Override
     public void insert(StackVersionRow row) {
         jdbc.update("""
-      INSERT INTO stack_versions(stack_id, version, parent_version, body_json, body_sha256, created_by, comment)
-      VALUES(?,?,?,?,?,?,?)
+      INSERT INTO stack_versions(stack_id, version, parent_version, body_json, body_sha256, created_at, created_by, comment)
+      VALUES(?,?,?,?,?,?,?,?)
       """,
-                row.stackId(), row.version(), row.parentVersion(), row.bodyJson(), row.bodySha256(), row.createdBy(), row.comment()
+                row.stackId(), row.version(), row.parentVersion(), row.bodyJson(), row.bodySha256(), Instant.now().toString(), row.createdBy(), row.comment()
         );
     }
 

@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:sqlite:target/test-docker-${random.uuid}.db
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+orchestrator:
+  worker:
+    enabled: true
+    autostart: false
