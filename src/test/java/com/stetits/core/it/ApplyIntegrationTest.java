@@ -26,7 +26,7 @@ class ApplyIntegrationTest {
     @Autowired StackVersionsRepository versions;
     @Autowired CommandsRepository commands;
     @Autowired CommandWorker worker;
-    @Autowired ObjectMapper om;
+    private ObjectMapper om = new ObjectMapper();
 
     @BeforeEach
     void requireDocker() {
@@ -37,10 +37,6 @@ class ApplyIntegrationTest {
     void apply_creates_containers_with_labels() throws Exception {
         String stackId = "it-" + UUID.randomUUID();
         stacks.insert(stackId, "IT stack");
-
-        // Insérer une stack version (si tu n’as pas encore d’API d’écriture des versions, on peut le faire via repo si tu ajoutes une méthode insert)
-        // => Recommandation: ajoute StackVersionsRepository.insert(...) en Phase 6.5.
-        // En attendant: fais une insertion SQL directe dans un helper test, ou expose un endpoint admin.
-        // Ici je pars du principe que tu as ajouté insert(...) (sinon je te donne le patch).
+        // TODO: à finaliser
     }
 }
