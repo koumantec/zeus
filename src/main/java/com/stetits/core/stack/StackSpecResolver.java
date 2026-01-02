@@ -13,12 +13,11 @@ public class StackSpecResolver {
 
     private final StacksRepository stacks;
     private final StackVersionsRepository versions;
-    private final ObjectMapper om;
+    private final ObjectMapper om = new ObjectMapper();
 
-    public StackSpecResolver(StacksRepository stacks, StackVersionsRepository versions, ObjectMapper om) {
+    public StackSpecResolver(StacksRepository stacks, StackVersionsRepository versions) {
         this.stacks = stacks;
         this.versions = versions;
-        this.om = om;
     }
 
     public record StackOrder(String version, List<String> startOrder, List<String> stopOrder) {}
