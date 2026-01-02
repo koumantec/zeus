@@ -42,12 +42,11 @@ public class ApplyStackVersionHandler implements CommandHandler {
         String version = ctx.payload().path("version").asText(null);
         if (version == null || version.isBlank()) throw new IllegalArgumentException("payload.version is required");
 
-        String bodyJson = versions.getBodyJson(stackId, version)
-                .orElseThrow(() -> new IllegalArgumentException("StackVersion not found: " + stackId + "/" + version));
+        String bodyJson = versions.getBodyJson(stackId, version).orElseThrow(() -> new IllegalArgumentException("StackVersion not found: " + stackId + "/" + version));
 
         JsonNode root = om.readTree(bodyJson);
         JsonNode services = root.path("compose").path("services");
-        if (!services.isObject() || !services.fields().hasNext()) throw new IllegalArgumentException("compose.services is empty");
+        if (!services.isObject() || services.properties().isEmpty()) throw new IllegalArgumentException("compose.services is empty");
 
         String networkName = "core_" + stackId;
         var network = docker.ensureNetwork(networkName, DockerLabels.base(stackId, version, "_network"));
@@ -55,7 +54,7 @@ public class ApplyStackVersionHandler implements CommandHandler {
 
         // dependencies map
         Map<String, java.util.List<String>> deps = new java.util.HashMap<>();
-        services.fields().forEachRemaining(e -> {
+        services.properties().forEach(e -> {
             String svc = e.getKey();
             JsonNode def = e.getValue();
             java.util.List<String> d = new java.util.ArrayList<>();
@@ -69,47 +68,48 @@ public class ApplyStackVersionHandler implements CommandHandler {
         ctx.info("Service start order: " + order);
 
         for (String serviceName : order) {
-            JsonNode svc = services.get(serviceName);
-            String image = svc.path("image").asText(null);
-            if (image == null || image.isBlank()) throw new IllegalArgumentException("service " + serviceName + " missing image");
-
-            var env = parseEnv(svc.path("environment"));
-            var ports = parsePorts(svc.path("ports"));
-
-            String containerName = "core_" + stackId + "_" + serviceName;
-
-            var labels = new java.util.HashMap<>(DockerLabels.base(stackId, version, serviceName));
-            labels.put("core.container_name", containerName);
-            labels.put("core.network_name", network.name());
-
-            var spec = new DockerClientFacade.ContainerSpec(containerName, image, env, ports, network, labels);
-
-            var existing = docker.findContainerByName(containerName);
+            var spec = getContainerSpec(services, stackId, serviceName, version, network);
+            var existing = docker.findContainerByName(spec.name());
             if (existing.isPresent()) {
                 boolean replace = !version.equals(existing.get().labels().get(DockerLabels.STACK_VERSION));
                 if (replace) {
-                    ctx.warn("Replacing " + containerName + " due to version change");
+                    ctx.warn("Replacing " + spec.name() + " due to version change");
                     docker.stopContainer(existing.get().id());
                     docker.removeContainer(existing.get().id(), true);
                     String id = docker.createContainer(spec);
                     docker.startContainer(id);
-                    ctx.info("Started " + containerName + " id=" + id);
+                    ctx.info("Started " + spec.name() + " id=" + id);
                 } else {
-                    ctx.info("Ensuring running " + containerName);
+                    ctx.info("Ensuring running " + spec.name());
                     docker.startContainer(existing.get().id());
                 }
             } else {
-                ctx.info("Creating " + containerName);
+                ctx.info("Creating " + spec.name());
                 String id = docker.createContainer(spec);
                 docker.startContainer(id);
-                ctx.info("Started " + containerName + " id=" + id);
+                ctx.info("Started " + spec.name() + " id=" + id);
             }
         }
-
         stacks.setCurrentVersion(stackId, version);
         ctx.info("Stack current_version updated to " + version);
     }
 
+    private DockerClientFacade.ContainerSpec getContainerSpec(JsonNode services, String stackId, String serviceName, String version, DockerClientFacade.NetworkRef network) {
+        JsonNode svc = services.get(serviceName);
+        String image = svc.path("image").asText(null);
+        if (image == null || image.isBlank()) throw new IllegalArgumentException("service " + serviceName + " missing image");
+
+        var env = parseEnv(svc.path("environment"));
+        var ports = parsePorts(svc.path("ports"));
+
+        String containerName = "core_" + stackId + "_" + serviceName;
+
+        var labels = new java.util.HashMap<>(DockerLabels.base(stackId, version, serviceName));
+        labels.put("core.container_name", containerName);
+        labels.put("core.network_name", network.name());
+
+        return new DockerClientFacade.ContainerSpec(containerName, image, env, ports, network, labels);
+    }
 
     private boolean mustReplace(DockerClientFacade.ContainerInfo actual, DockerClientFacade.ContainerSpec desired) {
         // MVP “diff” : si version/service/image/env/ports changent -> replace

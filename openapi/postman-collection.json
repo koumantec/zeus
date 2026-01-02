@@ -1,0 +1,599 @@
+{
+  "info": {
+    "name": "Core Control API",
+    "description": "Collection complète des endpoints de l'API Core Control",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "stackId",
+      "value": "web-app-prod",
+      "type": "string"
+    },
+    {
+      "key": "version",
+      "value": "v1.0.0",
+      "type": "string"
+    },
+    {
+      "key": "commandId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Stacks",
+      "item": [
+        {
+          "name": "List all stacks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stacks",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create stack",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stackId\": \"{{stackId}}\",\n  \"name\": \"Application Web Production\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stacks",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get stack details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Stack Versions",
+      "item": [
+        {
+          "name": "List versions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}/versions",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}", "versions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create version - Simple Nginx",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": \"v1.0.0\",\n  \"body\": {\n    \"version\": \"3.8\",\n    \"services\": {\n      \"nginx\": {\n        \"image\": \"nginx:1.25-alpine\",\n        \"ports\": [\n          \"80:80\"\n        ]\n      }\n    }\n  },\n  \"createdBy\": \"admin@example.com\",\n  \"comment\": \"Initial nginx setup\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}/versions",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}", "versions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create version - Full Web App",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": \"v1.2.0\",\n  \"body\": {\n    \"version\": \"3.8\",\n    \"services\": {\n      \"nginx\": {\n        \"image\": \"nginx:1.25-alpine\",\n        \"ports\": [\n          \"80:80\",\n          \"443:443\"\n        ],\n        \"volumes\": [\n          \"./nginx.conf:/etc/nginx/nginx.conf:ro\",\n          \"web-content:/usr/share/nginx/html\"\n        ],\n        \"networks\": [\n          \"frontend\"\n        ]\n      },\n      \"app\": {\n        \"image\": \"myapp:1.2.0\",\n        \"environment\": [\n          \"DB_HOST=postgres\",\n          \"DB_PORT=5432\",\n          \"REDIS_URL=redis://redis:6379\"\n        ],\n        \"depends_on\": [\n          \"postgres\",\n          \"redis\"\n        ],\n        \"networks\": [\n          \"frontend\",\n          \"backend\"\n        ]\n      },\n      \"postgres\": {\n        \"image\": \"postgres:16-alpine\",\n        \"environment\": [\n          \"POSTGRES_DB=myapp\",\n          \"POSTGRES_USER=appuser\",\n          \"POSTGRES_PASSWORD=secret123\"\n        ],\n        \"volumes\": [\n          \"postgres-data:/var/lib/postgresql/data\"\n        ],\n        \"networks\": [\n          \"backend\"\n        ]\n      },\n      \"redis\": {\n        \"image\": \"redis:7-alpine\",\n        \"networks\": [\n          \"backend\"\n        ]\n      }\n    },\n    \"networks\": {\n      \"frontend\": {\n        \"driver\": \"bridge\"\n      },\n      \"backend\": {\n        \"driver\": \"bridge\"\n      }\n    },\n    \"volumes\": {\n      \"web-content\": {},\n      \"postgres-data\": {}\n    }\n  },\n  \"createdBy\": \"admin@example.com\",\n  \"comment\": \"Full stack with nginx, app, postgres and redis\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}/versions",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}", "versions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create version - WildFly Stack",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": \"v2.0.0\",\n  \"body\": {\n    \"version\": \"3.8\",\n    \"services\": {\n      \"wildfly\": {\n        \"image\": \"quay.io/wildfly/wildfly:31.0.0.Final-jdk21\",\n        \"ports\": [\n          \"8080:8080\",\n          \"9990:9990\"\n        ],\n        \"environment\": [\n          \"WILDFLY_USER=admin\",\n          \"WILDFLY_PASSWORD=admin123\"\n        ],\n        \"volumes\": [\n          \"./deployments:/opt/jboss/wildfly/standalone/deployments\"\n        ],\n        \"depends_on\": [\n          \"postgres\"\n        ],\n        \"networks\": [\n          \"app-network\"\n        ]\n      },\n      \"postgres\": {\n        \"image\": \"postgres:16-alpine\",\n        \"environment\": [\n          \"POSTGRES_DB=wildfly_db\",\n          \"POSTGRES_USER=wildfly\",\n          \"POSTGRES_PASSWORD=wildfly123\"\n        ],\n        \"volumes\": [\n          \"postgres-data:/var/lib/postgresql/data\"\n        ],\n        \"networks\": [\n          \"app-network\"\n        ]\n      }\n    },\n    \"networks\": {\n      \"app-network\": {\n        \"driver\": \"bridge\"\n      }\n    },\n    \"volumes\": {\n      \"postgres-data\": {}\n    }\n  },\n  \"createdBy\": \"devops@example.com\",\n  \"comment\": \"WildFly 31 with PostgreSQL 16\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}/versions",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}", "versions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get version details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}/versions/{{version}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}", "versions", "{{version}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Stack Runtime",
+      "item": [
+        {
+          "name": "List containers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}/containers",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}", "containers"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get stack status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get service logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}/logs?service=web-app-prod-nginx-1&tail=100",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}", "logs"],
+              "query": [
+                {
+                  "key": "service",
+                  "value": "web-app-prod-nginx-1"
+                },
+                {
+                  "key": "tail",
+                  "value": "100"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Commands - Query",
+      "item": [
+        {
+          "name": "List all commands",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/commands?limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["commands"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List commands by stack",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/commands?stackId={{stackId}}&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["commands"],
+              "query": [
+                {
+                  "key": "stackId",
+                  "value": "{{stackId}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get command details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/commands/{{commandId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["commands", "{{commandId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get command logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/commands/{{commandId}}/logs?limit=200",
+              "host": ["{{baseUrl}}"],
+              "path": ["commands", "{{commandId}}", "logs"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "200"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Commands - Operations",
+      "item": [
+        {
+          "name": "Apply version",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}/apply/{{version}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}", "apply", "{{version}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rollback to version",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}/rollback/v0.9.0",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}", "rollback", "v0.9.0"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Start stack",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}", "start"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Stop stack",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}/stop",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}", "stop"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Restart stack",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}/restart",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}", "restart"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deploy WAR to WildFly",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetService\": \"wildfly\",\n  \"artifactPath\": \"/uploads/myapp-1.2.0.war\",\n  \"strategy\": \"copy\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}/deploy",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}", "deploy"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete stack",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}", "delete"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel command",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/commands/{{commandId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["commands", "{{commandId}}", "cancel"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Worker",
+      "item": [
+        {
+          "name": "Get worker status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/worker",
+              "host": ["{{baseUrl}}"],
+              "path": ["worker"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Complete Workflow Example",
+      "item": [
+        {
+          "name": "1. Create stack",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set(\"stackId\", jsonData.stackId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stackId\": \"demo-app\",\n  \"name\": \"Demo Application\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stacks",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. Create version",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set(\"version\", jsonData.version);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": \"v1.0.0\",\n  \"body\": {\n    \"version\": \"3.8\",\n    \"services\": {\n      \"nginx\": {\n        \"image\": \"nginx:alpine\",\n        \"ports\": [\"80:80\"]\n      }\n    }\n  },\n  \"createdBy\": \"demo-user\",\n  \"comment\": \"Initial version\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}/versions",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}", "versions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3. Apply version",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 202\", function () {",
+                  "    pm.response.to.have.status(202);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set(\"commandId\", jsonData.commandId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}/apply/{{version}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}", "apply", "{{version}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. Check command status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/commands/{{commandId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["commands", "{{commandId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5. Get command logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/commands/{{commandId}}/logs",
+              "host": ["{{baseUrl}}"],
+              "path": ["commands", "{{commandId}}", "logs"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6. Check stack status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stacks/{{stackId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["stacks", "{{stackId}}", "status"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

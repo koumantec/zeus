@@ -1,0 +1,1357 @@
+openapi: 3.0.3
+info:
+  title: Core Control API
+  description: |
+    API de gestion et d'orchestration de stacks Docker.
+    
+    Cette API permet de :
+    - Créer et gérer des stacks Docker
+    - Versionner les configurations de stacks
+    - Exécuter des commandes asynchrones (apply, rollback, deploy, start, stop, restart, delete)
+    - Consulter l'état des conteneurs et les logs
+    - Suivre l'exécution des commandes
+    
+    ## Architecture
+    
+    L'API suit un modèle CQRS (Command Query Responsibility Segregation) :
+    - **Commandes** : Opérations asynchrones qui modifient l'état (POST)
+    - **Requêtes** : Opérations synchrones de lecture (GET)
+    
+    ## Workflow typique
+    
+    1. Créer une stack : `POST /stacks`
+    2. Créer une version : `POST /stacks/{stackId}/versions`
+    3. Appliquer la version : `POST /stacks/{stackId}/apply/{version}`
+    4. Suivre l'exécution : `GET /commands/{commandId}`
+    5. Consulter les logs : `GET /commands/{commandId}/logs`
+    6. Vérifier l'état : `GET /stacks/{stackId}/status`
+    
+  version: 1.0.0
+  contact:
+    name: Core Control Team
+    email: support@stetits.com
+
+servers:
+  - url: http://localhost:8080
+    description: Serveur de développement local
+  - url: https://api.core-control.example.com
+    description: Serveur de production
+
+tags:
+  - name: Stacks
+    description: Gestion des stacks Docker
+  - name: Stack Versions
+    description: Gestion des versions de stacks
+  - name: Stack Runtime
+    description: État d'exécution des stacks (conteneurs, logs)
+  - name: Commands
+    description: Exécution et suivi des commandes asynchrones
+  - name: Worker
+    description: État du worker d'exécution des commandes
+
+paths:
+  # ==================== STACKS ====================
+  /stacks:
+    get:
+      tags:
+        - Stacks
+      summary: Lister toutes les stacks
+      description: Retourne la liste de toutes les stacks enregistrées dans le système
+      operationId: listStacks
+      responses:
+        '200':
+          description: Liste des stacks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StackDto'
+              examples:
+                success:
+                  value:
+                    - stackId: "web-app-prod"
+                      name: "Application Web Production"
+                      currentVersion: "v1704067200000"
+                    - stackId: "api-backend"
+                      name: "API Backend Services"
+                      currentVersion: "v1704153600000"
+                    - stackId: "monitoring"
+                      name: "Stack de Monitoring"
+                      currentVersion: null
+    
+    post:
+      tags:
+        - Stacks
+      summary: Créer une nouvelle stack
+      description: Crée une nouvelle stack vide (sans version)
+      operationId: createStack
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStackRequest'
+            examples:
+              webApp:
+                summary: Application web
+                value:
+                  stackId: "web-app-prod"
+                  name: "Application Web Production"
+              apiBackend:
+                summary: API backend
+                value:
+                  stackId: "api-backend"
+                  name: "API Backend Services"
+      responses:
+        '201':
+          description: Stack créée avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stackId:
+                    type: string
+                  name:
+                    type: string
+              examples:
+                success:
+                  value:
+                    stackId: "web-app-prod"
+                    name: "Application Web Production"
+        '409':
+          description: La stack existe déjà
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                conflict:
+                  value:
+                    error: "Stack already exists"
+
+  /stacks/{stackId}:
+    get:
+      tags:
+        - Stacks
+      summary: Obtenir les détails d'une stack
+      description: Retourne les informations d'une stack spécifique
+      operationId: getStack
+      parameters:
+        - $ref: '#/components/parameters/StackIdParam'
+      responses:
+        '200':
+          description: Détails de la stack
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StackDto'
+              examples:
+                withVersion:
+                  summary: Stack avec version
+                  value:
+                    stackId: "web-app-prod"
+                    name: "Application Web Production"
+                    currentVersion: "v1704067200000"
+                withoutVersion:
+                  summary: Stack sans version
+                  value:
+                    stackId: "monitoring"
+                    name: "Stack de Monitoring"
+                    currentVersion: null
+        '404':
+          description: Stack non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    error: "Stack not found"
+
+  # ==================== STACK VERSIONS ====================
+  /stacks/{stackId}/versions:
+    get:
+      tags:
+        - Stack Versions
+      summary: Lister les versions d'une stack
+      description: Retourne toutes les versions d'une stack avec la version courante
+      operationId: listStackVersions
+      parameters:
+        - $ref: '#/components/parameters/StackIdParam'
+      responses:
+        '200':
+          description: Liste des versions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stackId:
+                    type: string
+                  currentVersion:
+                    type: string
+                    nullable: true
+                  versions:
+                    type: array
+                    items:
+                      type: string
+              examples:
+                multipleVersions:
+                  value:
+                    stackId: "web-app-prod"
+                    currentVersion: "v1704067200000"
+                    versions:
+                      - "v1704067200000"
+                      - "v1703980800000"
+                      - "v1703894400000"
+        '404':
+          description: Stack non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags:
+        - Stack Versions
+      summary: Créer une nouvelle version
+      description: |
+        Crée une nouvelle version de la stack à partir d'une configuration Docker Compose.
+        
+        Le système calcule automatiquement un hash SHA-256 du contenu pour éviter les doublons.
+        Si le contenu est identique à la dernière version, aucune nouvelle version n'est créée.
+      operationId: createStackVersion
+      parameters:
+        - $ref: '#/components/parameters/StackIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVersionRequest'
+            examples:
+              webAppVersion:
+                summary: Version d'application web
+                value:
+                  version: "v1.2.0"
+                  body:
+                    version: "3.8"
+                    services:
+                      nginx:
+                        image: "nginx:1.25-alpine"
+                        ports:
+                          - "80:80"
+                          - "443:443"
+                        volumes:
+                          - "./nginx.conf:/etc/nginx/nginx.conf:ro"
+                          - "web-content:/usr/share/nginx/html"
+                        networks:
+                          - frontend
+                      app:
+                        image: "myapp:1.2.0"
+                        environment:
+                          - "DB_HOST=postgres"
+                          - "DB_PORT=5432"
+                          - "REDIS_URL=redis://redis:6379"
+                        depends_on:
+                          - postgres
+                          - redis
+                        networks:
+                          - frontend
+                          - backend
+                      postgres:
+                        image: "postgres:16-alpine"
+                        environment:
+                          - "POSTGRES_DB=myapp"
+                          - "POSTGRES_USER=appuser"
+                          - "POSTGRES_PASSWORD=secret123"
+                        volumes:
+                          - "postgres-data:/var/lib/postgresql/data"
+                        networks:
+                          - backend
+                      redis:
+                        image: "redis:7-alpine"
+                        networks:
+                          - backend
+                    networks:
+                      frontend:
+                        driver: bridge
+                      backend:
+                        driver: bridge
+                    volumes:
+                      web-content:
+                      postgres-data:
+                  createdBy: "admin@example.com"
+                  comment: "Mise à jour vers la version 1.2.0 avec optimisations"
+              
+              wildflyStack:
+                summary: Stack WildFly avec PostgreSQL
+                value:
+                  version: "v2.0.0"
+                  body:
+                    version: "3.8"
+                    services:
+                      wildfly:
+                        image: "quay.io/wildfly/wildfly:31.0.0.Final-jdk21"
+                        ports:
+                          - "8080:8080"
+                          - "9990:9990"
+                        environment:
+                          - "WILDFLY_USER=admin"
+                          - "WILDFLY_PASSWORD=admin123"
+                        volumes:
+                          - "./deployments:/opt/jboss/wildfly/standalone/deployments"
+                        depends_on:
+                          - postgres
+                        networks:
+                          - app-network
+                      postgres:
+                        image: "postgres:16-alpine"
+                        environment:
+                          - "POSTGRES_DB=wildfly_db"
+                          - "POSTGRES_USER=wildfly"
+                          - "POSTGRES_PASSWORD=wildfly123"
+                        volumes:
+                          - "postgres-data:/var/lib/postgresql/data"
+                        networks:
+                          - app-network
+                    networks:
+                      app-network:
+                        driver: bridge
+                    volumes:
+                      postgres-data:
+                  createdBy: "devops@example.com"
+                  comment: "Configuration initiale WildFly 31 avec PostgreSQL 16"
+      responses:
+        '201':
+          description: Version créée avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateVersionResponse'
+              examples:
+                success:
+                  value:
+                    stackId: "web-app-prod"
+                    version: "v1.2.0"
+                    parentVersion: "v1.1.0"
+                    bodySha256: "a3f5e8c9d2b1f4e7a6c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0"
+        '400':
+          description: Requête invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Stack non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /stacks/{stackId}/versions/{version}:
+    get:
+      tags:
+        - Stack Versions
+      summary: Obtenir une version spécifique
+      description: Retourne le contenu complet d'une version de stack
+      operationId: getStackVersion
+      parameters:
+        - $ref: '#/components/parameters/StackIdParam'
+        - name: version
+          in: path
+          required: true
+          description: Identifiant de la version
+          schema:
+            type: string
+          example: "v1704067200000"
+      responses:
+        '200':
+          description: Détails de la version
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stackId:
+                    type: string
+                  version:
+                    type: string
+                  bodyJson:
+                    type: string
+                    description: Configuration Docker Compose au format JSON
+              examples:
+                success:
+                  value:
+                    stackId: "web-app-prod"
+                    version: "v1.2.0"
+                    bodyJson: "{\"version\":\"3.8\",\"services\":{\"nginx\":{\"image\":\"nginx:1.25-alpine\",\"ports\":[\"80:80\"]}}}"
+        '404':
+          description: Version non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ==================== STACK RUNTIME ====================
+  /stacks/{stackId}/containers:
+    get:
+      tags:
+        - Stack Runtime
+      summary: Lister les conteneurs d'une stack
+      description: Retourne la liste des conteneurs Docker associés à la stack
+      operationId: listStackContainers
+      parameters:
+        - $ref: '#/components/parameters/StackIdParam'
+      responses:
+        '200':
+          description: Liste des conteneurs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stackId:
+                    type: string
+                  containers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ContainerInfo'
+              examples:
+                runningContainers:
+                  value:
+                    stackId: "web-app-prod"
+                    containers:
+                      - id: "a1b2c3d4e5f6"
+                        name: "web-app-prod-nginx-1"
+                        state: "running"
+                        status: "Up 2 hours"
+                        labels:
+                          com.docker.compose.project: "web-app-prod"
+                          com.docker.compose.service: "nginx"
+                      - id: "f6e5d4c3b2a1"
+                        name: "web-app-prod-app-1"
+                        state: "running"
+                        status: "Up 2 hours"
+                        labels:
+                          com.docker.compose.project: "web-app-prod"
+                          com.docker.compose.service: "app"
+                      - id: "1a2b3c4d5e6f"
+                        name: "web-app-prod-postgres-1"
+                        state: "running"
+                        status: "Up 2 hours (healthy)"
+                        labels:
+                          com.docker.compose.project: "web-app-prod"
+                          com.docker.compose.service: "postgres"
+        '404':
+          description: Stack non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /stacks/{stackId}/status:
+    get:
+      tags:
+        - Stack Runtime
+      summary: Obtenir le statut d'une stack
+      description: Retourne l'état global de la stack avec un résumé des conteneurs
+      operationId: getStackStatus
+      parameters:
+        - $ref: '#/components/parameters/StackIdParam'
+      responses:
+        '200':
+          description: Statut de la stack
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stackId:
+                    type: string
+                  containers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ContainerInfo'
+                  summary:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      running:
+                        type: integer
+              examples:
+                allRunning:
+                  summary: Tous les conteneurs en cours d'exécution
+                  value:
+                    stackId: "web-app-prod"
+                    containers:
+                      - id: "a1b2c3d4e5f6"
+                        name: "web-app-prod-nginx-1"
+                        state: "running"
+                        status: "Up 2 hours"
+                        labels:
+                          com.docker.compose.project: "web-app-prod"
+                      - id: "f6e5d4c3b2a1"
+                        name: "web-app-prod-app-1"
+                        state: "running"
+                        status: "Up 2 hours"
+                        labels:
+                          com.docker.compose.project: "web-app-prod"
+                    summary:
+                      total: 2
+                      running: 2
+                partiallyRunning:
+                  summary: Certains conteneurs arrêtés
+                  value:
+                    stackId: "web-app-prod"
+                    containers:
+                      - id: "a1b2c3d4e5f6"
+                        name: "web-app-prod-nginx-1"
+                        state: "running"
+                        status: "Up 2 hours"
+                        labels:
+                          com.docker.compose.project: "web-app-prod"
+                      - id: "f6e5d4c3b2a1"
+                        name: "web-app-prod-app-1"
+                        state: "exited"
+                        status: "Exited (1) 5 minutes ago"
+                        labels:
+                          com.docker.compose.project: "web-app-prod"
+                    summary:
+                      total: 2
+                      running: 1
+        '404':
+          description: Stack non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /stacks/{stackId}/logs:
+    get:
+      tags:
+        - Stack Runtime
+      summary: Obtenir les logs d'un service
+      description: Retourne les logs d'un conteneur spécifique de la stack
+      operationId: getStackLogs
+      parameters:
+        - $ref: '#/components/parameters/StackIdParam'
+        - name: service
+          in: query
+          required: true
+          description: Nom du service (conteneur)
+          schema:
+            type: string
+          example: "web-app-prod-nginx-1"
+        - name: tail
+          in: query
+          required: false
+          description: Nombre de lignes à retourner
+          schema:
+            type: integer
+            default: 200
+          example: 100
+      responses:
+        '200':
+          description: Logs du conteneur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stackId:
+                    type: string
+                  service:
+                    type: string
+                  containerId:
+                    type: string
+                  lines:
+                    type: array
+                    items:
+                      type: string
+              examples:
+                nginxLogs:
+                  value:
+                    stackId: "web-app-prod"
+                    service: "web-app-prod-nginx-1"
+                    containerId: "a1b2c3d4e5f6"
+                    lines:
+                      - "2024-01-15 10:30:45 [info] 1#1: nginx/1.25.3"
+                      - "2024-01-15 10:30:45 [notice] 1#1: using the \"epoll\" event method"
+                      - "2024-01-15 10:30:45 [notice] 1#1: nginx/1.25.3"
+                      - "2024-01-15 10:30:45 [notice] 1#1: start worker processes"
+                      - "2024-01-15 10:35:12 192.168.1.100 - - [15/Jan/2024:10:35:12 +0000] \"GET / HTTP/1.1\" 200 612"
+                      - "2024-01-15 10:35:15 192.168.1.100 - - [15/Jan/2024:10:35:15 +0000] \"GET /api/health HTTP/1.1\" 200 15"
+        '404':
+          description: Stack ou conteneur non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                containerNotFound:
+                  value:
+                    error: "Container not found for service=web-app-prod-nginx-1"
+
+  # ==================== COMMANDS ====================
+  /commands:
+    get:
+      tags:
+        - Commands
+      summary: Lister les commandes
+      description: Retourne la liste des commandes, avec filtrage optionnel par stack
+      operationId: listCommands
+      parameters:
+        - name: stackId
+          in: query
+          required: false
+          description: Filtrer par stack
+          schema:
+            type: string
+          example: "web-app-prod"
+        - name: limit
+          in: query
+          required: false
+          description: Nombre maximum de résultats
+          schema:
+            type: integer
+            default: 50
+          example: 20
+      responses:
+        '200':
+          description: Liste des commandes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommandDto'
+              examples:
+                recentCommands:
+                  value:
+                    - id: 1
+                      stackId: "web-app-prod"
+                      type: "APPLY_STACK_VERSION"
+                      payloadJson: "{\"version\":\"v1.2.0\"}"
+                      status: "SUCCESS"
+                      createdAt: "2024-01-15T10:30:00Z"
+                      startedAt: "2024-01-15T10:30:01Z"
+                      endedAt: "2024-01-15T10:32:15Z"
+                      errorMessage: null
+                    - id: 2
+                      stackId: "web-app-prod"
+                      type: "RESTART_STACK"
+                      payloadJson: "{}"
+                      status: "SUCCESS"
+                      createdAt: "2024-01-15T11:00:00Z"
+                      startedAt: "2024-01-15T11:00:01Z"
+                      endedAt: "2024-01-15T11:00:45Z"
+                      errorMessage: null
+                    - id: 3
+                      stackId: "api-backend"
+                      type: "DEPLOY_APP"
+                      payloadJson: "{\"targetService\":\"wildfly\",\"artifactPath\":\"/uploads/app.war\",\"strategy\":\"copy\"}"
+                      status: "RUNNING"
+                      createdAt: "2024-01-15T11:30:00Z"
+                      startedAt: "2024-01-15T11:30:02Z"
+                      endedAt: null
+                      errorMessage: null
+
+  /commands/{id}:
+    get:
+      tags:
+        - Commands
+      summary: Obtenir les détails d'une commande
+      description: Retourne les informations complètes d'une commande spécifique
+      operationId: getCommand
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identifiant de la commande
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: Détails de la commande
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandDto'
+              examples:
+                successfulCommand:
+                  summary: Commande réussie
+                  value:
+                    id: 1
+                    stackId: "web-app-prod"
+                    type: "APPLY_STACK_VERSION"
+                    payloadJson: "{\"version\":\"v1.2.0\"}"
+                    status: "SUCCESS"
+                    createdAt: "2024-01-15T10:30:00Z"
+                    startedAt: "2024-01-15T10:30:01Z"
+                    endedAt: "2024-01-15T10:32:15Z"
+                    errorMessage: null
+                failedCommand:
+                  summary: Commande échouée
+                  value:
+                    id: 5
+                    stackId: "web-app-prod"
+                    type: "APPLY_STACK_VERSION"
+                    payloadJson: "{\"version\":\"v1.3.0\"}"
+                    status: "FAILED"
+                    createdAt: "2024-01-15T12:00:00Z"
+                    startedAt: "2024-01-15T12:00:01Z"
+                    endedAt: "2024-01-15T12:00:30Z"
+                    errorMessage: "Failed to pull image nginx:invalid-tag"
+                pendingCommand:
+                  summary: Commande en attente
+                  value:
+                    id: 10
+                    stackId: "monitoring"
+                    type: "START_STACK"
+                    payloadJson: "{}"
+                    status: "PENDING"
+                    createdAt: "2024-01-15T14:00:00Z"
+                    startedAt: null
+                    endedAt: null
+                    errorMessage: null
+        '404':
+          description: Commande non trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /commands/{id}/logs:
+    get:
+      tags:
+        - Commands
+      summary: Obtenir les logs d'une commande
+      description: Retourne les logs d'exécution d'une commande
+      operationId: getCommandLogs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identifiant de la commande
+          schema:
+            type: integer
+            format: int64
+          example: 1
+        - name: limit
+          in: query
+          required: false
+          description: Nombre maximum de lignes
+          schema:
+            type: integer
+            default: 200
+          example: 100
+      responses:
+        '200':
+          description: Logs de la commande
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  commandId:
+                    type: integer
+                    format: int64
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CommandLogRow'
+              examples:
+                applyLogs:
+                  value:
+                    commandId: 1
+                    logs:
+                      - ts: "2024-01-15T10:30:01.123Z"
+                        level: "INFO"
+                        message: "Starting APPLY_STACK_VERSION for stack=web-app-prod, version=v1.2.0"
+                      - ts: "2024-01-15T10:30:02.456Z"
+                        level: "INFO"
+                        message: "Loading stack version from database"
+                      - ts: "2024-01-15T10:30:03.789Z"
+                        level: "INFO"
+                        message: "Parsing Docker Compose configuration"
+                      - ts: "2024-01-15T10:30:05.012Z"
+                        level: "INFO"
+                        message: "Creating network: web-app-prod_frontend"
+                      - ts: "2024-01-15T10:30:06.345Z"
+                        level: "INFO"
+                        message: "Creating network: web-app-prod_backend"
+                      - ts: "2024-01-15T10:30:08.678Z"
+                        level: "INFO"
+                        message: "Pulling image: nginx:1.25-alpine"
+                      - ts: "2024-01-15T10:30:25.901Z"
+                        level: "INFO"
+                        message: "Image pulled successfully"
+                      - ts: "2024-01-15T10:30:27.234Z"
+                        level: "INFO"
+                        message: "Creating container: web-app-prod-nginx-1"
+                      - ts: "2024-01-15T10:30:28.567Z"
+                        level: "INFO"
+                        message: "Starting container: web-app-prod-nginx-1"
+                      - ts: "2024-01-15T10:32:15.890Z"
+                        level: "INFO"
+                        message: "APPLY_STACK_VERSION completed successfully"
+
+  # ==================== COMMAND OPERATIONS ====================
+  /stacks/{stackId}/apply/{version}:
+    post:
+      tags:
+        - Commands
+      summary: Appliquer une version
+      description: |
+        Applique une version spécifique de la stack. Cette opération :
+        - Crée les réseaux et volumes nécessaires
+        - Pull les images Docker
+        - Crée et démarre les conteneurs
+        - Met à jour la version courante de la stack
+        
+        L'opération est asynchrone et retourne immédiatement un ID de commande.
+      operationId: applyStackVersion
+      parameters:
+        - $ref: '#/components/parameters/StackIdParam'
+        - name: version
+          in: path
+          required: true
+          description: Version à appliquer
+          schema:
+            type: string
+          example: "v1.2.0"
+      responses:
+        '202':
+          description: Commande acceptée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandAcceptedResponse'
+              examples:
+                accepted:
+                  value:
+                    commandId: 1
+                    status: "PENDING"
+
+  /stacks/{stackId}/rollback/{version}:
+    post:
+      tags:
+        - Commands
+      summary: Rollback vers une version
+      description: |
+        Effectue un rollback vers une version antérieure de la stack.
+        Fonctionne de manière similaire à apply mais avec une version plus ancienne.
+      operationId: rollbackStack
+      parameters:
+        - $ref: '#/components/parameters/StackIdParam'
+        - name: version
+          in: path
+          required: true
+          description: Version cible du rollback
+          schema:
+            type: string
+          example: "v1.1.0"
+      responses:
+        '202':
+          description: Commande acceptée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandAcceptedResponse'
+              examples:
+                accepted:
+                  value:
+                    commandId: 2
+                    status: "PENDING"
+
+  /stacks/{stackId}/delete:
+    post:
+      tags:
+        - Commands
+      summary: Supprimer une stack
+      description: |
+        Supprime complètement une stack :
+        - Arrête et supprime tous les conteneurs
+        - Supprime les réseaux
+        - Supprime les volumes (attention : perte de données)
+        
+        ⚠️ Cette opération est irréversible !
+      operationId: deleteStack
+      parameters:
+        - $ref: '#/components/parameters/StackIdParam'
+      responses:
+        '202':
+          description: Commande acceptée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandAcceptedResponse'
+              examples:
+                accepted:
+                  value:
+                    commandId: 3
+                    status: "PENDING"
+
+  /stacks/{stackId}/deploy:
+    post:
+      tags:
+        - Commands
+      summary: Déployer une application
+      description: |
+        Déploie un artefact (WAR, JAR, etc.) dans un service de la stack.
+        Typiquement utilisé pour déployer des applications dans WildFly, Tomcat, etc.
+      operationId: deployApp
+      parameters:
+        - $ref: '#/components/parameters/StackIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeployAppRequest'
+            examples:
+              warDeployment:
+                summary: Déploiement WAR dans WildFly
+                value:
+                  targetService: "wildfly"
+                  artifactPath: "/uploads/myapp-1.2.0.war"
+                  strategy: "copy"
+              jarDeployment:
+                summary: Déploiement JAR
+                value:
+                  targetService: "spring-boot-app"
+                  artifactPath: "/uploads/app.jar"
+                  strategy: "replace"
+      responses:
+        '202':
+          description: Commande acceptée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandAcceptedResponse'
+              examples:
+                accepted:
+                  value:
+                    commandId: 4
+                    status: "PENDING"
+
+  /stacks/{stackId}/start:
+    post:
+      tags:
+        - Commands
+      summary: Démarrer une stack
+      description: Démarre tous les conteneurs d'une stack dans l'ordre défini
+      operationId: startStack
+      parameters:
+        - $ref: '#/components/parameters/StackIdParam'
+      responses:
+        '202':
+          description: Commande acceptée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandAcceptedResponse'
+              examples:
+                accepted:
+                  value:
+                    commandId: 5
+                    status: "PENDING"
+
+  /stacks/{stackId}/stop:
+    post:
+      tags:
+        - Commands
+      summary: Arrêter une stack
+      description: Arrête tous les conteneurs d'une stack dans l'ordre inverse
+      operationId: stopStack
+      parameters:
+        - $ref: '#/components/parameters/StackIdParam'
+      responses:
+        '202':
+          description: Commande acceptée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandAcceptedResponse'
+              examples:
+                accepted:
+                  value:
+                    commandId: 6
+                    status: "PENDING"
+
+  /stacks/{stackId}/restart:
+    post:
+      tags:
+        - Commands
+      summary: Redémarrer une stack
+      description: Redémarre tous les conteneurs d'une stack (stop puis start)
+      operationId: restartStack
+      parameters:
+        - $ref: '#/components/parameters/StackIdParam'
+      responses:
+        '202':
+          description: Commande acceptée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandAcceptedResponse'
+              examples:
+                accepted:
+                  value:
+                    commandId: 7
+                    status: "PENDING"
+
+  /commands/{commandId}/cancel:
+    post:
+      tags:
+        - Commands
+      summary: Annuler une commande
+      description: |
+        Annule une commande en attente (statut PENDING).
+        Les commandes en cours d'exécution ou terminées ne peuvent pas être annulées.
+      operationId: cancelCommand
+      parameters:
+        - name: commandId
+          in: path
+          required: true
+          description: Identifiant de la commande
+          schema:
+            type: integer
+            format: int64
+          example: 10
+      responses:
+        '200':
+          description: Commande annulée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  commandId:
+                    type: integer
+                    format: int64
+                  status:
+                    type: string
+              examples:
+                cancelled:
+                  value:
+                    commandId: 10
+                    status: "CANCELLED"
+        '409':
+          description: La commande ne peut pas être annulée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                cannotCancel:
+                  value:
+                    error: "Command cannot be cancelled (not PENDING)"
+
+  # ==================== WORKER ====================
+  /worker:
+    get:
+      tags:
+        - Worker
+      summary: Statut du worker
+      description: Retourne l'état du worker d'exécution des commandes
+      operationId: getWorkerStatus
+      responses:
+        '200':
+          description: Statut du worker
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  running:
+                    type: boolean
+              examples:
+                running:
+                  summary: Worker actif
+                  value:
+                    running: true
+                stopped:
+                  summary: Worker arrêté
+                  value:
+                    running: false
+
+components:
+  parameters:
+    StackIdParam:
+      name: stackId
+      in: path
+      required: true
+      description: Identifiant unique de la stack
+      schema:
+        type: string
+      example: "web-app-prod"
+
+  schemas:
+    # ==================== STACK SCHEMAS ====================
+    StackDto:
+      type: object
+      required:
+        - stackId
+        - name
+      properties:
+        stackId:
+          type: string
+          description: Identifiant unique de la stack
+          example: "web-app-prod"
+        name:
+          type: string
+          description: Nom descriptif de la stack
+          example: "Application Web Production"
+        currentVersion:
+          type: string
+          nullable: true
+          description: Version actuellement déployée
+          example: "v1704067200000"
+
+    CreateStackRequest:
+      type: object
+      required:
+        - stackId
+        - name
+      properties:
+        stackId:
+          type: string
+          description: Identifiant unique de la stack (alphanumérique, tirets autorisés)
+          pattern: '^[a-zA-Z0-9-]+$'
+          example: "web-app-prod"
+        name:
+          type: string
+          description: Nom descriptif de la stack
+          minLength: 1
+          example: "Application Web Production"
+
+    # ==================== VERSION SCHEMAS ====================
+    CreateVersionRequest:
+      type: object
+      required:
+        - body
+      properties:
+        version:
+          type: string
+          description: Identifiant de version (optionnel, généré automatiquement si absent)
+          example: "v1.2.0"
+        body:
+          type: object
+          description: Configuration Docker Compose au format JSON
+          example:
+            version: "3.8"
+            services:
+              nginx:
+                image: "nginx:1.25-alpine"
+                ports:
+                  - "80:80"
+        createdBy:
+          type: string
+          description: Identifiant de l'utilisateur créateur
+          example: "admin@example.com"
+        comment:
+          type: string
+          description: Commentaire décrivant les changements
+          example: "Mise à jour vers nginx 1.25"
+
+    CreateVersionResponse:
+      type: object
+      properties:
+        stackId:
+          type: string
+          example: "web-app-prod"
+        version:
+          type: string
+          example: "v1.2.0"
+        parentVersion:
+          type: string
+          nullable: true
+          example: "v1.1.0"
+        bodySha256:
+          type: string
+          description: Hash SHA-256 du contenu de la version
+          example: "a3f5e8c9d2b1f4e7a6c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0"
+
+    # ==================== COMMAND SCHEMAS ====================
+    CommandDto:
+      type: object
+      required:
+        - id
+        - stackId
+        - type
+        - payloadJson
+        - status
+        - createdAt
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Identifiant unique de la commande
+          example: 1
+        stackId:
+          type: string
+          description: Stack concernée
+          example: "web-app-prod"
+        type:
+          type: string
+          description: Type de commande
+          enum:
+            - APPLY_STACK_VERSION
+            - ROLLBACK_STACK
+            - DELETE_STACK
+            - DEPLOY_APP
+            - START_STACK
+            - STOP_STACK
+            - RESTART_STACK
+          example: "APPLY_STACK_VERSION"
+        payloadJson:
+          type: string
+          description: Paramètres de la commande au format JSON
+          example: "{\"version\":\"v1.2.0\"}"
+        status:
+          type: string
+          description: Statut d'exécution
+          enum:
+            - PENDING
+            - RUNNING
+            - SUCCESS
+            - FAILED
+            - CANCELLED
+          example: "SUCCESS"
+        createdAt:
+          type: string
+          format: date-time
+          description: Date de création
+          example: "2024-01-15T10:30:00Z"
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date de début d'exécution
+          example: "2024-01-15T10:30:01Z"
+        endedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date de fin d'exécution
+          example: "2024-01-15T10:32:15Z"
+        errorMessage:
+          type: string
+          nullable: true
+          description: Message d'erreur en cas d'échec
+          example: null
+
+    CommandLogRow:
+      type: object
+      properties:
+        ts:
+          type: string
+          format: date-time
+          description: Timestamp du log
+          example: "2024-01-15T10:30:01.123Z"
+        level:
+          type: string
+          description: Niveau de log
+          enum:
+            - DEBUG
+            - INFO
+            - WARN
+            - ERROR
+          example: "INFO"
+        message:
+          type: string
+          description: Message du log
+          example: "Starting APPLY_STACK_VERSION for stack=web-app-prod"
+
+    CommandAcceptedResponse:
+      type: object
+      properties:
+        commandId:
+          type: integer
+          format: int64
+          description: Identifiant de la commande créée
+          example: 1
+        status:
+          type: string
+          description: Statut initial
+          enum:
+            - PENDING
+          example: "PENDING"
+
+    DeployAppRequest:
+      type: object
+      required:
+        - targetService
+        - artifactPath
+        - strategy
+      properties:
+        targetService:
+          type: string
+          description: Nom du service cible (conteneur)
+          example: "wildfly"
+        artifactPath:
+          type: string
+          description: Chemin vers l'artefact à déployer
+          example: "/uploads/myapp-1.2.0.war"
+        strategy:
+          type: string
+          description: Stratégie de déploiement
+          enum:
+            - copy
+            - replace
+          example: "copy"
+
+    # ==================== RUNTIME SCHEMAS ====================
+    ContainerInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identifiant Docker du conteneur
+          example: "a1b2c3d4e5f6"
+        name:
+          type: string
+          description: Nom du conteneur
+          example: "web-app-prod-nginx-1"
+        state:
+          type: string
+          description: État du conteneur
+          enum:
+            - created
+            - running
+            - paused
+            - restarting
+            - removing
+            - exited
+            - dead
+          example: "running"
+        status:
+          type: string
+          description: Statut détaillé
+          example: "Up 2 hours"
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+          description: Labels Docker du conteneur
+          example:
+            com.docker.compose.project: "web-app-prod"
+            com.docker.compose.service: "nginx"
+            com.docker.compose.version: "2.23.0"
+
+    # ==================== ERROR SCHEMAS ====================
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Message d'erreur
+          example: "Stack not found"

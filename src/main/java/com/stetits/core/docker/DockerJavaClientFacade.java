@@ -14,7 +14,6 @@ public class DockerJavaClientFacade implements DockerClientFacade {
     public DockerJavaClientFacade(DockerClient docker) {
         this.docker = docker;
     }
-
     @Override
     public Optional<ContainerInfo> findContainerByName(String name) {
         // Docker retourne les noms avec un "/" au début
