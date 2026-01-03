@@ -4,13 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stetits.core.docker.DockerClientFacade;
 import com.stetits.core.persistence.StackVersionsRepository;
 import com.stetits.core.persistence.StacksRepository;
+import com.stetits.core.stack.StackSpecParser;
 import com.stetits.core.worker.CommandContext;
 import com.stetits.core.worker.handlers.ApplyStackVersionHandler;
 import com.stetits.core.persistence.CommandLogsRepository;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -20,101 +21,66 @@ class ApplyHandlerUnitTest {
 
     @Test
     void apply_creates_network_and_container_and_updates_current_version() throws Exception {
-        // fakes
-        var versions = new FakeVersionsRepo("""
+        // Mocks
+        StackVersionsRepository versions = mock(StackVersionsRepository.class);
+        StacksRepository stacks = mock(StacksRepository.class);
+        DockerClientFacade docker = mock(DockerClientFacade.class);
+        CommandLogsRepository logs = mock(CommandLogsRepository.class);
+        
+        String versionBody = """
       {"stackId":"s1","version":"v1","compose":{"services":{"web":{"image":"nginx:alpine","ports":["8080:80"]}}}}
-    """);
-        var stacks = new FakeStacksRepo();
-        stacks.insert("s1", "Stack 1");
-
-        var docker = new FakeDocker();
-        var om = new ObjectMapper();
-
-        var handler = new ApplyStackVersionHandler(
-                versions,
-                stacks,
-                docker);
-
-        var logs = mock(CommandLogsRepository.class);
+    """;
+        
+        // Configuration des mocks
+        when(versions.getBodyJson("s1", "v1")).thenReturn(Optional.of(versionBody));
+        when(stacks.get("s1")).thenReturn(Optional.of(new com.stetits.core.domain.dto.StackDto("s1", "Stack 1", null)));
+        
+        // Mock Docker - capture des appels
+        Map<String, DockerClientFacade.NetworkRef> createdNetworks = new HashMap<>();
+        Map<String, DockerClientFacade.ContainerInfo> createdContainers = new HashMap<>();
+        
+        when(docker.ensureNetwork(anyString(), anyMap())).thenAnswer(invocation -> {
+            String name = invocation.getArgument(0);
+            DockerClientFacade.NetworkRef ref = new DockerClientFacade.NetworkRef("net-" + name, name);
+            createdNetworks.put(name, ref);
+            return ref;
+        });
+        
+        when(docker.findContainerByName(anyString())).thenReturn(Optional.empty());
+        
+        when(docker.createContainer(any(DockerClientFacade.ContainerSpec.class))).thenAnswer(invocation -> {
+            DockerClientFacade.ContainerSpec spec = invocation.getArgument(0);
+            String id = "c-" + spec.name();
+            DockerClientFacade.ContainerInfo info = new DockerClientFacade.ContainerInfo(id, spec.name(), "created", "Created", spec.labels());
+            createdContainers.put(spec.name(), info);
+            return id;
+        });
+        
+        doNothing().when(docker).startContainer(anyString());
+        doNothing().when(docker).pullImageBlocking(anyString(), any());
+        
         when(logs.list(anyLong(), anyInt())).thenReturn(List.of());
         doNothing().when(logs).append(anyLong(), anyString(), anyString());
-
-
-        var ctx = new CommandContext(1L, "s1", "APPLY_STACK_VERSION", om.readTree("{\"version\":\"v1\"}"), (CommandLogsRepository) logs);
+        
+        ArgumentCaptor<String> versionCaptor = ArgumentCaptor.forClass(String.class);
+        doNothing().when(stacks).setCurrentVersion(eq("s1"), versionCaptor.capture());
+        
+        var parser = new StackSpecParser();
+        var om = new ObjectMapper();
+        
+        var handler = new ApplyStackVersionHandler(versions, stacks, parser, docker);
+        var ctx = new CommandContext(1L, "s1", "APPLY_STACK_VERSION", om.readTree("{\"version\":\"v1\"}"), logs);
 
         handler.execute(ctx);
 
-        assertThat(docker.networks).containsKey("core_s1");
-        assertThat(docker.containersByName).containsKey("core_s1_web");
-        assertThat(stacks.currentVersion.get()).isEqualTo("v1");
-    }
-
-    // ---- fakes minimalistes ----
-    static class FakeDocker implements DockerClientFacade {
-        Map<String,String> networks = new HashMap<>();
-        Map<String,ContainerInfo> containersByName = new HashMap<>();
-        long seq = 1;
-
-        @Override
-        public NetworkRef ensureNetwork(String name, Map<String, String> labels) {
-            networks.computeIfAbsent(name, n -> "net-" + n);
-            return new NetworkRef(name, networks.get(name));
-        }
-
-        @Override public Optional<ContainerInfo> findContainerByName(String name) {
-            return Optional.ofNullable(containersByName.get(name));
-        }
-        @Override public String createContainer(ContainerSpec spec) {
-            String id = "c-" + (seq++);
-            containersByName.put(spec.name(), new ContainerInfo(id, spec.name(), "created", "Created", spec.labels()));
-            return id;
-        }
-        @Override public void startContainer(String containerId) { /* no-op */ }
-
-        @Override
-        public void stopContainer(String containerId)  { /* no-op */ }
-
-        @Override
-        public void removeContainer(String containerId, boolean force) { /* no-op */ }
-
-        @Override
-        public void restartContainer(String containerId) { /* no-op */ }
-
-        @Override public List<ContainerInfo> listByStack(String stackId) {
-            return containersByName.values().stream()
-                    .filter(c -> stackId.equals(c.labels().get("core.stack_id")))
-                    .toList();
-        }
-
-        @Override
-        public List<String> containerLogs(String containerId, int tail) {
-            return List.of();
-        }
-    }
-
-    static class FakeVersionsRepo implements StackVersionsRepository {
-        final String body;
-        FakeVersionsRepo(String body) { this.body = body; }
-        @Override public Optional<String> getBodyJson(String stackId, String version) { return Optional.of(body); }
-        @Override public List<String> listVersions(String stackId) { return List.of("v1"); }
-
-        @Override
-        public void insert(StackVersionRow row) { /* no-op */ }
-    }
-
-    static class FakeStacksRepo extends StacksRepository {
-        final AtomicReference<String> currentVersion = new AtomicReference<>(null);
-        final Set<String> ids = new HashSet<>();
-
-        public FakeStacksRepo() {
-            super(null);
-        }
-
-        @Override public List<com.stetits.core.domain.dto.StackDto> list() { return List.of(); }
-        @Override public Optional<com.stetits.core.domain.dto.StackDto> get(String stackId) {
-            return ids.contains(stackId) ? Optional.of(new com.stetits.core.domain.dto.StackDto(stackId, "x", currentVersion.get())) : Optional.empty();
-        }
-        @Override public void insert(String stackId, String name) { ids.add(stackId); }
-        @Override public void setCurrentVersion(String stackId, String version) { currentVersion.set(version); }
+        // Vérifications
+        assertThat(createdNetworks).containsKey("core_s1");
+        assertThat(createdContainers).containsKey("core_s1_web");
+        assertThat(versionCaptor.getValue()).isEqualTo("v1");
+        
+        verify(docker).ensureNetwork(eq("core_s1"), anyMap());
+        verify(docker).createContainer(any(DockerClientFacade.ContainerSpec.class));
+        verify(docker).startContainer(anyString());
+        verify(stacks).setCurrentVersion("s1", "v1");
     }
 }

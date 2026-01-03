@@ -20,6 +20,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -53,18 +55,23 @@ class ReadWhileRunningTest extends TestBase {
 
         @Bean
         public CommandHandler blockingHandler(CountDownLatch startedLatch, CountDownLatch releaseLatch) {
-            return new CommandHandler() {
-                @Override public String type() { return "BLOCKING_READ_TEST"; }
-
-                @Override
-                public void execute(CommandContext ctx) throws Exception {
+            CommandHandler handler = mock(CommandHandler.class);
+            when(handler.type()).thenReturn("BLOCKING_READ_TEST");
+            
+            try {
+                doAnswer(invocation -> {
+                    CommandContext ctx = invocation.getArgument(0);
                     ctx.info("Blocking handler started");
                     startedLatch.countDown();
-                    // attend que le test autorise la fin
                     releaseLatch.await(5, TimeUnit.SECONDS);
                     ctx.info("Blocking handler released");
-                }
-            };
+                    return null;
+                }).when(handler).execute(any(CommandContext.class));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            
+            return handler;
         }
     }
 

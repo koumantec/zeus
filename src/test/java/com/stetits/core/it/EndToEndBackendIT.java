@@ -32,7 +32,7 @@ class EndToEndBackendIT {
     @Autowired DockerClientFacade facade;
 
     @Autowired MockMvc mvc;
-    @Autowired ObjectMapper om;
+    private ObjectMapper om = new ObjectMapper();
 
     @Autowired CommandsRepository commands;
     @Autowired CommandWorker worker;

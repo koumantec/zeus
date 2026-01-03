@@ -12,6 +12,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -23,16 +25,21 @@ class ErrorMessageTruncationTest extends TestBase {
     static class TestHandlersConfig {
         @Bean
         public CommandHandler explodingHandler() {
-            return new CommandHandler() {
-                @Override public String type() { return "EXPLODE_LONG"; }
-
-                @Override
-                public void execute(CommandContext ctx) {
+            CommandHandler handler = mock(CommandHandler.class);
+            when(handler.type()).thenReturn("EXPLODE_LONG");
+            
+            try {
+                doAnswer(invocation -> {
+                    CommandContext ctx = invocation.getArgument(0);
                     String longMsg = "X".repeat(5000);
                     ctx.error("About to throw long exception message of length=" + longMsg.length());
                     throw new RuntimeException(longMsg);
-                }
-            };
+                }).when(handler).execute(any(CommandContext.class));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            
+            return handler;
         }
     }
 

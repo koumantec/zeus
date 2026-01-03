@@ -117,8 +117,18 @@ public class DockerJavaClientFacade implements DockerClientFacade {
         List<MountSpec> mounts = new ArrayList<>();
         if (r.getMounts() != null) {
             for (InspectContainerResponse.Mount m : r.getMounts()) {
-                if ("volume".equalsIgnoreCase(m.getType())) {
-                    mounts.add(new MountSpec(m.getName(), Objects.requireNonNull(m.getDestination()).getPath(), !Boolean.TRUE.equals(m.getRW())));
+                // Vérifier si c'est un volume nommé (pas un bind mount)
+                // Un volume nommé a un Name non null
+                String volumeName = m.getName();
+                Volume destination = m.getDestination();
+                Boolean readWrite = m.getRW();
+                
+                // Si c'est un volume nommé (pas un bind mount qui aurait Source au lieu de Name)
+                if (volumeName != null && destination != null) {
+                    String destPath = destination.getPath();
+                    if (destPath != null) {
+                        mounts.add(new MountSpec(volumeName, destPath, !Boolean.TRUE.equals(readWrite)));
+                    }
                 }
             }
         }
