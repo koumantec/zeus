@@ -51,7 +51,8 @@ public class StackPlanner {
         Set<String> desired = new HashSet<>();
         for (String svc : order) {
             desired.add("core_" + stackId + "_" + svc);
-            actions.add(new StackPlan.Action("ENSURE_CONTAINER", svc, "hostname=" + svc + ", alias=" + svc));
+            String detail = "hostname=" + svc + ", alias=" + svc + ", command=" + spec.services().get(svc).command();
+            actions.add(new StackPlan.Action("ENSURE_CONTAINER", svc, detail));
         }
 
         // orphans

@@ -103,13 +103,14 @@ public class ApplyStackVersionHandler implements CommandHandler {
 
             var desired = new DockerClientFacade.ContainerSpec(
                     containerName,
-                    serviceName,                 // hostname deterministic
+                    serviceName,
                     svc.image(),
                     env,
                     ports,
                     network,
-                    List.of(serviceName),        // alias deterministic
+                    List.of(serviceName),
                     mounts,
+                    svc.command(),
                     labels
             );
 

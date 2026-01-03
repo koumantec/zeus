@@ -47,7 +47,20 @@ public class StackSpecParser {
             JsonNode v = s.get("volumes");
             if (v != null && v.isArray()) for (JsonNode x : v) vols.add(x.asText(""));
 
-            svcMap.put(name, new StackSpec.ServiceSpec(image, envMap, envList, ports, deps, vols));
+            List<String> command = null;
+            JsonNode cmdNode = s.get("command");
+            if (cmdNode != null && !cmdNode.isNull()) {
+                if (cmdNode.isTextual()) {
+                    // string -> ["sh","-lc", "<string>"] pour coller au comportement compose shell-like
+                    command = List.of("sh", "-lc", cmdNode.asText());
+                } else if (cmdNode.isArray()) {
+                    List<String> tmp = new ArrayList<>();
+                    for (JsonNode x : cmdNode) tmp.add(x.asText(""));
+                    command = tmp;
+                }
+            }
+
+            svcMap.put(name, new StackSpec.ServiceSpec(image, envMap, envList, ports, deps, vols, command));
         });
 
         Map<String,Object> volumes = new LinkedHashMap<>();

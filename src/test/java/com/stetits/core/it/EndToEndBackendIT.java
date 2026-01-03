@@ -13,6 +13,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,14 +58,16 @@ class EndToEndBackendIT {
 
         // version with volume + depends_on
         String body = """
-      {"compose":{
-        "services":{
-          "db":{"image":"redis:7-alpine","volumes":["data:/data"]},
-          "app":{"image":"busybox:latest","depends_on":["db"],"environment":["X=1"]}
-        },
-        "volumes":{"data":{}}
-      }}
-      """;
+            {
+                "compose": {
+                    "services": {
+                        "db": { "image": "redis:7-alpine", "volumes": ["data:/data"] },
+                        "app": { "image": "alpine:3.20", "depends_on": ["db"], "command": ["sh","-lc","sleep 300"] }
+                    },
+                    "volumes": { "data": {} }
+                }
+            }
+          """;
 
         var verRes = mvc.perform(post("/stacks/{id}/versions", stackId)
                         .header("Authorization", token)
@@ -97,8 +101,10 @@ class EndToEndBackendIT {
         // Better: use "busybox:latest" with command "sleep 300"—not yet supported in spec.
         // So we validate DNS by exec in db container resolving itself by name (alias present).
         var db = facade.findContainerByName("core_" + stackId + "_db").orElseThrow();
-        var exec = facade.execInContainer(db.id(), java.util.List.of("sh","-lc","getent hosts db || ping -c 1 db"), java.time.Duration.ofSeconds(5));
-        assertThat(exec.exitCode()).isEqualTo(0);
+        var exec1 = facade.execInContainer(db.id(), java.util.List.of("sh","-lc","getent hosts db || ping -c 1 db"), java.time.Duration.ofSeconds(5));
+        var exec2 = facade.execInContainer(app.id(), List.of("sh","-lc","getent hosts db"), Duration.ofSeconds(5));
+        assertThat(exec1.exitCode()).isEqualTo(0);
+        assertThat(exec2.exitCode()).isEqualTo(0);
 
         // delete stack
         var delRes = mvc.perform(post("/stacks/{id}/delete", stackId)

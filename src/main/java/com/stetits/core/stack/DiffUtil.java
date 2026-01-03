@@ -12,6 +12,7 @@ public final class DiffUtil {
         if (!Objects.equals(normalizeEnv(actual.env()), normalizeEnv(desired.env()))) return false;
         if (!Objects.equals(normalizePorts(actual.portsTcp()), normalizePorts(desired.portsTcp()))) return false;
         if (!Objects.equals(actual.hostname(), desired.hostname())) return false;
+        if (!Objects.equals(normalizeCmd(actual.command()), normalizeCmd(desired.command()))) return false;
 
         // network name (docker returns network name)
         if (desired.network() != null && actual.networkName() != null) {
@@ -26,6 +27,12 @@ public final class DiffUtil {
 
         // mounts: compare set of (volumeName -> containerPath, ro)
         return Objects.equals(normalizeMounts(actual.mounts()), normalizeMounts(desired.mounts()));
+    }
+
+    private static List<String> normalizeCmd(List<String> cmd) {
+        if (cmd == null) return List.of();
+        // Certains containers peuvent avoir cmd vide vs null
+        return cmd.stream().filter(s -> s != null && !s.isBlank()).toList();
     }
 
     private static Map<String,String> normalizeEnv(Map<String,String> env) {

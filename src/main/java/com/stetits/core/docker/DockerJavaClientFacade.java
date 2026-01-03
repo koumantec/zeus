@@ -168,7 +168,11 @@ public class DockerJavaClientFacade implements DockerClientFacade {
             if (al != null) aliases.addAll(al);
         }
 
-        return new InspectContainer(containerId, image, env, ports, networkName, aliases, hostname, mounts);
+        List<String> cmd = new ArrayList<>();
+        String[] cmdArr = (r.getConfig() != null) ? r.getConfig().getCmd() : null;
+        if (cmdArr != null) cmd.addAll(Arrays.asList(cmdArr));
+
+        return new InspectContainer(containerId, image, env, ports, networkName, aliases, hostname, mounts, cmd);
     }
 
     @Override
@@ -215,14 +219,21 @@ public class DockerJavaClientFacade implements DockerClientFacade {
         List<String> env = spec.env() == null ? List.of() :
                 spec.env().entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).toList();
 
-        var resp = docker.createContainerCmd(spec.image())
+        var cmd = spec.command();
+
+        var create = docker.createContainerCmd(spec.image())
                 .withName(spec.name())
                 .withHostName(spec.hostname())
                 .withEnv(env)
                 .withLabels(spec.labels())
                 .withExposedPorts(exposed)
-                .withHostConfig(hostConfig)
-                .exec();
+                .withHostConfig(hostConfig);
+
+        if (cmd != null && !cmd.isEmpty()) {
+            create = create.withCmd(cmd.toArray(String[]::new));
+        }
+
+        var resp = create.exec();
 
         String id = resp.getId();
 

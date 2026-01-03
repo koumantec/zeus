@@ -5,14 +5,15 @@ import java.util.Map;
 
 public record StackSpec(
         Map<String, ServiceSpec> services,
-        Map<String, Object> volumes // name -> {}
+        Map<String, Object> volumes
 ) {
     public record ServiceSpec(
             String image,
             Map<String,String> environment,
             List<String> environmentList,
-            List<String> ports,        // ["8080:80"]
-            List<String> dependsOn,    // ["db"]
-            List<String> volumes       // ["db_data:/path", "db_data:/path:ro"]
+            List<String> ports,
+            List<String> dependsOn,
+            List<String> volumes,
+            List<String> command   // ["sh","-lc","sleep 300"] ; null si absent
     ) {}
 }

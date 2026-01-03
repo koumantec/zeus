@@ -15,14 +15,15 @@ public interface DockerClientFacade {
     record MountSpec(String volumeName, String containerPath, boolean readOnly) {}
 
     record ContainerSpec(
-            String name,                // core_<stack>_<service>
-            String hostname,            // <service>
+            String name,
+            String hostname,
             String image,
             Map<String,String> env,
-            Map<Integer,Integer> portsTcp,  // hostPort -> containerPort
+            Map<Integer,Integer> portsTcp,
             NetworkRef network,
-            List<String> networkAliases,    // should include <service>
+            List<String> networkAliases,
             List<MountSpec> mounts,
+            List<String> command,
             Map<String,String> labels
     ) {}
 
@@ -63,10 +64,11 @@ public interface DockerClientFacade {
             String id,
             String image,
             Map<String,String> env,
-            Map<Integer,Integer> portsTcp,      // hostPort -> containerPort
+            Map<Integer,Integer> portsTcp,
             String networkName,
             List<String> aliases,
             String hostname,
-            List<MountSpec> mounts
+            List<MountSpec> mounts,
+            List<String> command
     ) {}
 }
