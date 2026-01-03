@@ -29,25 +29,23 @@ public class StopStackHandler implements CommandHandler {
         Map<String, DockerClientFacade.ContainerInfo> byName = new HashMap<>();
         for (var c : containers) byName.put(c.name(), c);
 
-        var orderOpt = resolver.resolveOrders(stackId);
-        if (orderOpt.isEmpty()) {
-            ctx.warn("No current_version/spec found. Stopping all containers without dependency ordering.");
+        var ord = resolver.resolve(stackId);
+        if (ord.isEmpty()) {
+            ctx.warn("No spec; stopping all containers without ordering");
             for (var c : containers) docker.stopContainer(c.id());
             return;
         }
 
-        var order = orderOpt.get().stopOrder();
-        ctx.info("Stopping in order: " + order);
-
-        for (String svc : order) {
-            var c = byName.get(svc);
-            if (c != null) docker.stopContainer(c.id());
+        ctx.info("Stopping in order: " + ord.get().stopOrder());
+        Set<String> touched = new HashSet<>();
+        for (String svc : ord.get().stopOrder()) {
+            String name = "core_" + stackId + "_" + svc;
+            var c = byName.get(name);
+            if (c != null) {
+                docker.stopContainer(c.id());
+                touched.add(name);
+            }
         }
-
-        // sécurité: stop tout container restant (si service supprimé du spec mais encore présent)
-        Set<String> stopped = new HashSet<>(order.stream().toList());
-        for (var c : containers) {
-            if (!stopped.contains(c.name())) docker.stopContainer(c.id());
-        }
+        for (var c : containers) if (!touched.contains(c.name())) docker.stopContainer(c.id());
     }
 }

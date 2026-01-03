@@ -1,6 +1,14 @@
 server:
   port: 8000
 
+core:
+  api:
+    token: ${CORE_API_TOKEN:change-me}
+  docker:
+    pullTimeoutSeconds: 180
+    wal: true
+    busyTimeoutMs: 5000
+
 spring:
   application:
     name: core-control
@@ -16,3 +24,9 @@ logging:
   level:
     root: INFO
     com.stetits.core: INFO
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui

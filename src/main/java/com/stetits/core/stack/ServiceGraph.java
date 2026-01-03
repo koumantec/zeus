@@ -23,19 +23,19 @@ public final class ServiceGraph {
             }
         }
 
-        ArrayDeque<String> q = new ArrayDeque<>();
+        PriorityQueue<String> q = new PriorityQueue<>();
         for (var e : inDegree.entrySet()) if (e.getValue() == 0) q.add(e.getKey());
 
         List<String> order = new ArrayList<>();
         while (!q.isEmpty()) {
-            String n = q.removeFirst();
+            String n = q.poll();
             order.add(n);
             for (String to : adj.getOrDefault(n, List.of())) {
                 int v = inDegree.merge(to, -1, Integer::sum);
                 if (v == 0) q.add(to);
             }
         }
-        if (order.size() != inDegree.size()) throw new IllegalArgumentException("Cycle detected in depends_on graph");
+        if (order.size() != inDegree.size()) throw new IllegalArgumentException("Cycle detected in service dependency graph");
         return order;
     }
 }

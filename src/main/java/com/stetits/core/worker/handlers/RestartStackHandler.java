@@ -19,9 +19,8 @@ public class RestartStackHandler implements CommandHandler {
 
     @Override
     public void execute(CommandContext ctx) throws Exception {
-        ctx.info("Restart: stopping stack first");
+        ctx.info("Restart: stop then start");
         stop.execute(ctx);
-        ctx.info("Restart: starting stack after stop");
         start.execute(ctx);
     }
 }

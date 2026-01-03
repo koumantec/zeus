@@ -26,9 +26,19 @@ public class CommandService {
         return enqueue(stackId, "APPLY_STACK_VERSION", Map.of("version", version));
     }
 
-    public long enqueueRollback(String stackId, String targetVersion) {
+    public long enqueueStart(String stackId) {
         ensureStackExists(stackId);
-        return enqueue(stackId, "ROLLBACK_STACK", Map.of("targetVersion", targetVersion));
+        return enqueue(stackId, "START_STACK", Map.of());
+    }
+
+    public long enqueueStop(String stackId) {
+        ensureStackExists(stackId);
+        return enqueue(stackId, "STOP_STACK", Map.of());
+    }
+
+    public long enqueueRestart(String stackId) {
+        ensureStackExists(stackId);
+        return enqueue(stackId, "RESTART_STACK", Map.of());
     }
 
     public long enqueueDelete(String stackId) {
@@ -36,14 +46,15 @@ public class CommandService {
         return enqueue(stackId, "DELETE_STACK", Map.of());
     }
 
+    public long enqueueRollback(String stackId, String targetVersion) {
+        ensureStackExists(stackId);
+        return enqueue(stackId, "ROLLBACK_STACK", Map.of("targetVersion", targetVersion));
+    }
+
     public long enqueueDeploy(String stackId, Map<String, Object> deployPayload) {
         ensureStackExists(stackId);
         return enqueue(stackId, "DEPLOY_APP", deployPayload);
     }
-
-    public long enqueueStart(String stackId) { ensureStackExists(stackId); return enqueue(stackId, "START_STACK", Map.of()); }
-    public long enqueueStop(String stackId)  { ensureStackExists(stackId); return enqueue(stackId, "STOP_STACK", Map.of()); }
-    public long enqueueRestart(String stackId){ ensureStackExists(stackId); return enqueue(stackId, "RESTART_STACK", Map.of()); }
 
     public boolean cancel(long commandId) {
         return commandsRepository.cancelIfPending(commandId);

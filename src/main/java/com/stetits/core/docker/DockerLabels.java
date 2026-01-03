@@ -1,5 +1,6 @@
 package com.stetits.core.docker;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public final class DockerLabels {
@@ -12,12 +13,12 @@ public final class DockerLabels {
     public static final String MANAGED_BY = "core.managed_by";
 
     public static Map<String, String> base(String stackId, String version, String service) {
-        return Map.of(
-                ORCH, "true",
-                MANAGED_BY, "core-control",
-                STACK_ID, stackId,
-                STACK_VERSION, version,
-                SERVICE, service
-        );
+        Map<String,String> m = new HashMap<>();
+        m.put(ORCH, "true");
+        m.put(MANAGED_BY, "core-control");
+        m.put(STACK_ID, stackId);
+        if (version != null) m.put(STACK_VERSION, version);
+        if (service != null) m.put(SERVICE, service);
+        return m;
     }
 }

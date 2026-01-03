@@ -3,6 +3,10 @@ orchestrator:
     enabled: true
     autostart: false
 
+core:
+  api:
+    token: test-token
+
 spring:
   datasource:
     driver-class-name: org.sqlite.JDBC
